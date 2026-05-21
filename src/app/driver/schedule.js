@@ -1,21 +1,11 @@
-import { getDriverSession } from "../../services/auth/mockAuthService.js";
-import {
-  getRouteScheduleForDriver,
-  getScheduleStudentsForDriver,
-  getVehicleForDriver,
-} from "../../services/driver/mockDriverData.js";
+import { getCurrentDriverSession } from "../../services/authApi.js";
+import { getDriverScheduleStudents } from "../../services/driverApi.js";
 import {
   ATTENDANCE_STATUS_LABEL,
   ATTENDANCE_STATUSES,
   getAttendanceSummary,
 } from "../../services/attendance/attendanceStatus.js";
-import { saveAttendance } from "../../services/attendance/mockAttendanceService.js";
-
-const session = getDriverSession();
-
-if (!session) {
-  window.location.replace("../login/");
-}
+import { saveAttendance } from "../../services/attendanceApi.js";
 
 const urlParams = new URLSearchParams(window.location.search);
 const scheduleId = urlParams.get("scheduleId");
@@ -47,13 +37,10 @@ const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
   minute: "2-digit",
 });
 
-const selectedSchedule = scheduleId
-  ? getRouteScheduleForDriver({ driverUserId: session?.driverId, scheduleId })
-  : null;
-const selectedVehicle = session ? getVehicleForDriver(session.driverId) : null;
-let attendanceRecords = selectedSchedule
-  ? getScheduleStudentsForDriver({ driverUserId: session.driverId, scheduleId })
-  : [];
+let session = null;
+let selectedSchedule = null;
+let selectedVehicle = null;
+let attendanceRecords = [];
 
 function getTodayDateValue() {
   return new Date().toISOString().slice(0, 10);
@@ -89,7 +76,7 @@ function renderScheduleHeader() {
   }
 
   scheduleTitle.textContent = `${selectedSchedule.startTime} ${selectedSchedule.name}`;
-  vehicleName.textContent = `${selectedVehicle.name} · ${session.accountId} 계정`;
+  vehicleName.textContent = `${selectedVehicle.name} · ${session.user.accountId} 계정`;
   scheduleError.classList.add("hidden");
   attendanceSection.classList.remove("hidden");
 }
@@ -191,29 +178,29 @@ function openSaveDialog() {
 
 async function handleSave() {
   setSaving(true);
-  showMessage("mock 저장을 진행하고 있습니다.", "info");
+  showMessage("저장 중입니다.", "info");
 
-  const result = await saveAttendance({
-    date: getTodayDateValue(),
-    vehicleId: selectedVehicle.id,
-    scheduleId: selectedSchedule.id,
-    records: attendanceRecords,
-  });
+  try {
+    const result = await saveAttendance({
+      date: getTodayDateValue(),
+      vehicleId: selectedVehicle.id,
+      scheduleId: selectedSchedule.id,
+      records: attendanceRecords,
+    });
 
-  setSaving(false);
+    setSaving(false);
 
-  if (!result.success) {
-    showMessage("저장에 실패했습니다. 다시 시도해주세요.", "error");
-    return;
+    const savedTime = timeFormatter.format(new Date(result.savedAt));
+    const { summary } = result;
+
+    showMessage(
+      `저장 완료: 탑승 ${summary.boarded}명, 미탑승 ${summary.notBoarded}명, 미확인 ${summary.unchecked}명 · ${savedTime}`,
+      "success",
+    );
+  } catch {
+    setSaving(false);
+    showMessage("저장에 실패했습니다. 잠시 후 다시 시도해주세요.", "error");
   }
-
-  const savedTime = timeFormatter.format(new Date(result.savedAt));
-  const { summary } = result;
-
-  showMessage(
-    `저장 완료: 탑승 ${summary.boarded}명, 미탑승 ${summary.notBoarded}명, 미확인 ${summary.unchecked}명 · ${savedTime}`,
-    "success",
-  );
 }
 
 saveButton.addEventListener("click", () => {
@@ -233,8 +220,43 @@ saveDialog.addEventListener("close", () => {
 
 renderToday();
 
-if (session) {
-  renderScheduleHeader();
-  renderStudentList();
-  renderSummary();
+async function initializeSchedule() {
+  session = await getCurrentDriverSession();
+
+  if (!session) {
+    window.location.replace("../login/");
+    return;
+  }
+
+  if (!scheduleId) {
+    renderScheduleHeader();
+    return;
+  }
+
+  scheduleTitle.textContent = "시간대 정보를 불러오는 중입니다";
+  vehicleName.textContent = `${session.user.accountId} 계정으로 로그인 중`;
+
+  try {
+    const data = await getDriverScheduleStudents(scheduleId);
+    selectedSchedule = data.schedule;
+    selectedVehicle = {
+      id: session.user.vehicleId,
+      name: session.user.vehicleName,
+    };
+    attendanceRecords = (data.students || []).map((student) => ({
+      ...student,
+      status: student.status || ATTENDANCE_STATUSES.unchecked,
+    }));
+
+    renderScheduleHeader();
+    renderStudentList();
+    renderSummary();
+  } catch {
+    scheduleTitle.textContent = "시간대 정보를 불러오지 못했습니다";
+    vehicleName.textContent = "";
+    scheduleError.classList.remove("hidden");
+    attendanceSection.classList.add("hidden");
+  }
 }
+
+initializeSchedule();

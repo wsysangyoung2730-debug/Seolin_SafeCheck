@@ -17,7 +17,7 @@
 - 원생별 상태 버튼 클릭 시에는 저장 또는 SMS 발송을 하지 않습니다.
 - 출결 저장은 `POST /api/driver/attendance/save`에서만 처리합니다.
 - 현재 백엔드의 driver API는 PostgreSQL 데이터를 조회/저장합니다.
-- 프론트엔드는 아직 기존 정적 mock service를 사용하며, API 연동은 후속 작업에서 진행합니다.
+- 기사님용 정적 프론트엔드는 이 API 계약을 기준으로 driver API를 호출합니다.
 - 사용자에게 전달되는 오류 메시지는 한국어로 작성합니다.
 
 ## 3. Base URL 전략
@@ -359,5 +359,5 @@ Excel은 DB의 원본 데이터를 가져오거나 내보내는 보조 수단입
 - schema 파일: `server/src/db/schema.sql`
 - seed 파일: `server/src/db/seed.sql`
 - seed 데이터는 개발용 가짜 원생/차량/시간대 데이터입니다.
-- 프론트엔드가 현재 백엔드 API를 호출하도록 바꾸는 작업은 별도 후속 작업에서 진행합니다.
+- 기사님용 프론트엔드는 `src/services/apiClient.js`를 통해 현재 백엔드 API를 호출합니다.
 - SMS 발송, SMS 로그 생성, Excel import/export, 관리자 CRUD API는 아직 구현하지 않았습니다.

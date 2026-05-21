@@ -188,12 +188,12 @@ seolin-safecheck/
 - 기사님용 정적 MVP 화면 구현
 - 백엔드 mock API 기반 준비
 - PostgreSQL 로컬 DB 스키마, seed, driver API DB 연동 준비
+- 기사님용 정적 프론트엔드와 driver API 연동
 
 ## 10. 추천 다음 단계
 
-1. 로컬 또는 Docker PostgreSQL 환경에서 schema/seed 적용
-2. 프론트엔드 API 호출 계층 추가
-3. 기존 기사님 화면을 DB-backed API와 연결
-4. 운영용 인증 방식 결정
-5. 관리자용 최소 데이터 관리 화면 구현
-6. 개발 환경에서는 SMS mock provider를 먼저 사용
+1. 로컬 또는 Docker PostgreSQL 환경에서 schema/seed 적용 검증
+2. 개발/운영 API base URL 설정 방식 확정
+3. 운영용 인증 방식 결정
+4. 관리자용 최소 데이터 관리 화면 구현
+5. 개발 환경에서는 SMS mock provider를 먼저 사용

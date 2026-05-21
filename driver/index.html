@@ -15,9 +15,9 @@
       </section>
     </main>
     <script type="module">
-      import { hasDriverSession } from "../src/services/auth/mockAuthService.js";
+      import { hasStoredDriverSession } from "../src/services/driverSession.js";
 
-      window.location.replace(hasDriverSession() ? "./home/" : "./login/");
+      window.location.replace(hasStoredDriverSession() ? "./home/" : "./login/");
     </script>
   </body>
 </html>

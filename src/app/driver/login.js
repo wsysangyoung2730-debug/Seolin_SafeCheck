@@ -1,14 +1,13 @@
-import { getDriverSession, loginDriver } from "../../services/auth/mockAuthService.js";
+import {
+  getCurrentDriverSession,
+  loginDriver,
+} from "../../services/authApi.js";
 
 const form = document.querySelector("#driver-login-form");
 const accountIdInput = document.querySelector("#account-id");
 const pinInput = document.querySelector("#pin");
 const loginButton = document.querySelector("#login-button");
 const message = document.querySelector("#login-message");
-
-if (getDriverSession()) {
-  window.location.replace("../home/");
-}
 
 function showMessage(text, type = "error") {
   message.textContent = text;
@@ -18,6 +17,12 @@ function showMessage(text, type = "error") {
 function setLoading(isLoading) {
   loginButton.disabled = isLoading;
   loginButton.textContent = isLoading ? "로그인 중..." : "로그인";
+}
+
+async function redirectIfLoggedIn() {
+  if (await getCurrentDriverSession()) {
+    window.location.replace("../home/");
+  }
 }
 
 form.addEventListener("submit", async (event) => {
@@ -53,3 +58,5 @@ form.addEventListener("submit", async (event) => {
   showMessage("로그인되었습니다. 오늘 운행 화면으로 이동합니다.", "success");
   window.location.replace("../home/");
 });
+
+redirectIfLoggedIn();

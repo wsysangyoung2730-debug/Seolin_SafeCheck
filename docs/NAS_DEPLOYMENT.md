@@ -241,8 +241,8 @@ CORS 오류가 날 때:
 
 권장 순서:
 
-1. 프론트엔드 API 호출 계층 추가
-2. mock API와 기존 프론트 흐름 연결
+1. NAS 배포 환경의 API base URL 확정
+2. PostgreSQL schema/seed 적용 절차 검증
 3. 운영용 인증 방식 보강
 4. 관리자 최소 CRUD API 구현
 5. 관리자 화면 구현

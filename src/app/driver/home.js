@@ -1,17 +1,11 @@
 import {
-  getDriverSession,
+  getCurrentDriverSession,
   logoutDriver,
-} from "../../services/auth/mockAuthService.js";
-import {
-  getTodayRouteSchedulesForDriver,
-  getVehicleForDriver,
-} from "../../services/driver/mockDriverData.js";
+} from "../../services/authApi.js";
+import { getTodayDriverSchedules } from "../../services/driverApi.js";
 
-const session = getDriverSession();
-
-if (!session) {
-  window.location.replace("../login/");
-}
+let session = null;
+let todayScheduleData = null;
 
 const todayLabel = document.querySelector("#today-label");
 const vehicleName = document.querySelector("#vehicle-name");
@@ -31,11 +25,16 @@ function renderToday() {
   todayLabel.textContent = dateFormatter.format(new Date());
 }
 
+function showScheduleMessage(text, type = "info") {
+  scheduleMessage.textContent = text;
+  scheduleMessage.dataset.type = type;
+}
+
 function renderDriverSummary() {
-  const vehicle = getVehicleForDriver(session.driverId);
+  const vehicle = todayScheduleData?.vehicle;
 
   vehicleName.textContent = vehicle ? vehicle.name : "배정된 차량 없음";
-  accountName.textContent = `${session.accountId} 계정으로 로그인 중`;
+  accountName.textContent = `${session.user.accountId} 계정으로 로그인 중`;
 }
 
 function createScheduleButton(schedule) {
@@ -66,7 +65,7 @@ function createScheduleButton(schedule) {
 }
 
 function renderSchedules() {
-  const schedules = getTodayRouteSchedulesForDriver(session.driverId);
+  const schedules = todayScheduleData?.schedules || [];
   scheduleList.replaceChildren();
 
   if (schedules.length === 0) {
@@ -83,12 +82,35 @@ function renderSchedules() {
 }
 
 logoutButton.addEventListener("click", () => {
-  logoutDriver();
-  window.location.replace("../login/");
+  logoutDriver().finally(() => {
+    window.location.replace("../login/");
+  });
 });
 
-if (session) {
+async function initializeHome() {
+  session = await getCurrentDriverSession();
+
+  if (!session) {
+    window.location.replace("../login/");
+    return;
+  }
+
   renderToday();
-  renderDriverSummary();
-  renderSchedules();
+  vehicleName.textContent = "운행 정보를 불러오는 중입니다";
+  accountName.textContent = `${session.user.accountId} 계정으로 로그인 중`;
+  showScheduleMessage("정보를 불러오는 중입니다.", "info");
+
+  try {
+    todayScheduleData = await getTodayDriverSchedules();
+    renderDriverSummary();
+    renderSchedules();
+    showScheduleMessage("", "info");
+  } catch {
+    vehicleName.textContent = "운행 정보를 불러오지 못했습니다";
+    accountName.textContent = "잠시 후 다시 시도해주세요.";
+    scheduleList.replaceChildren();
+    showScheduleMessage("시간대 정보를 불러오지 못했습니다.", "error");
+  }
 }
+
+initializeHome();
