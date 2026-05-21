@@ -1,16 +1,22 @@
 const express = require("express");
 
 const {
-  getCurrentMockDriver,
-  loginMockDriver,
+  getCurrentDriver,
+  loginDriver,
 } = require("../services/auth.service");
 const { errorResponse, successResponse } = require("../utils/apiResponse");
 
 const router = express.Router();
 
-router.post("/driver/login", (req, res) => {
+function asyncHandler(handler) {
+  return (req, res, next) => {
+    Promise.resolve(handler(req, res, next)).catch(next);
+  };
+}
+
+router.post("/driver/login", asyncHandler(async (req, res) => {
   const { accountId, password, pin } = req.body || {};
-  const result = loginMockDriver({ accountId, password, pin });
+  const result = await loginDriver({ accountId, password, pin });
 
   if (!result.success) {
     return res.status(401).json(
@@ -25,10 +31,10 @@ router.post("/driver/login", (req, res) => {
       isMockSession: true,
     }),
   );
-});
+}));
 
-router.get("/me", (req, res) => {
-  const user = getCurrentMockDriver(req);
+router.get("/me", asyncHandler(async (req, res) => {
+  const user = await getCurrentDriver(req);
 
   if (!user) {
     return res.status(401).json(
@@ -42,7 +48,7 @@ router.get("/me", (req, res) => {
       isMockSession: true,
     }),
   );
-});
+}));
 
 router.post("/logout", (req, res) => {
   res.json(

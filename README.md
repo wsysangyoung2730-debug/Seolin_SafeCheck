@@ -185,13 +185,15 @@ seolin-safecheck/
 - 제품 요구사항 정리
 - 아키텍처 초안 정리
 - 코드 규칙 정리
+- 기사님용 정적 MVP 화면 구현
+- 백엔드 mock API 기반 준비
+- PostgreSQL 로컬 DB 스키마, seed, driver API DB 연동 준비
 
 ## 10. 추천 다음 단계
 
-1. 기술 스택 최종 결정
-2. 데이터베이스 선택 확정
-3. 화면 목록과 라우팅 구조 확정
-4. DB 스키마 초안 작성
-5. 인증 방식 결정
-6. 기사님용 로그인 및 시간대 목록 화면부터 MVP 구현 시작
-7. 개발 환경에서는 SMS mock provider를 먼저 사용
+1. 로컬 또는 Docker PostgreSQL 환경에서 schema/seed 적용
+2. 프론트엔드 API 호출 계층 추가
+3. 기존 기사님 화면을 DB-backed API와 연결
+4. 운영용 인증 방식 결정
+5. 관리자용 최소 데이터 관리 화면 구현
+6. 개발 환경에서는 SMS mock provider를 먼저 사용

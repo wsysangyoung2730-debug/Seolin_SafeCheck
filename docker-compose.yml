@@ -3,11 +3,34 @@ services:
     build:
       context: ./server
     container_name: seolin-safecheck-backend
-    env_file:
-      - ./server/.env
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      CORS_ORIGIN: http://localhost:5500
+      DATABASE_URL: postgres://seolin_user:seolin_password@db:5432/seolin_safecheck
     ports:
       - "3000:3000"
+    depends_on:
+      - db
     restart: unless-stopped
 
-# DB service is intentionally not included in this task.
-# PostgreSQL or MariaDB will be added in a later DB integration task.
+  db:
+    image: postgres:16-alpine
+    container_name: seolin-safecheck-db
+    environment:
+      POSTGRES_DB: seolin_safecheck
+      POSTGRES_USER: seolin_user
+      POSTGRES_PASSWORD: seolin_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - seolin_safecheck_db_data:/var/lib/postgresql/data
+      - ./server/src/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./server/src/db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    restart: unless-stopped
+
+volumes:
+  seolin_safecheck_db_data:
+
+# Development-safe example credentials are used here.
+# Change all DB credentials before NAS/production deployment.

@@ -1,17 +1,23 @@
 const express = require("express");
 
-const { getCurrentMockDriver } = require("../services/auth.service");
+const { getCurrentDriver } = require("../services/auth.service");
 const {
-  getMockScheduleStudents,
-  getTodayMockSchedules,
+  getScheduleStudents,
+  getTodaySchedules,
 } = require("../services/schedule.service");
-const { saveMockAttendance } = require("../services/attendance.service");
+const { saveAttendance } = require("../services/attendance.service");
 const { errorResponse, successResponse } = require("../utils/apiResponse");
 
 const router = express.Router();
 
-function requireMockDriver(req, res, next) {
-  const user = getCurrentMockDriver(req);
+function asyncHandler(handler) {
+  return (req, res, next) => {
+    Promise.resolve(handler(req, res, next)).catch(next);
+  };
+}
+
+async function requireDriver(req, res, next) {
+  const user = await getCurrentDriver(req);
 
   if (!user) {
     return res.status(401).json(
@@ -23,14 +29,16 @@ function requireMockDriver(req, res, next) {
   return next();
 }
 
-router.get("/schedules/today", requireMockDriver, (req, res) => {
-  const result = getTodayMockSchedules(req.driverUser.id);
+router.use(asyncHandler(requireDriver));
+
+router.get("/schedules/today", asyncHandler(async (req, res) => {
+  const result = await getTodaySchedules(req.driverUser.id);
 
   res.json(successResponse(result));
-});
+}));
 
-router.get("/schedules/:scheduleId/students", requireMockDriver, (req, res) => {
-  const result = getMockScheduleStudents({
+router.get("/schedules/:scheduleId/students", asyncHandler(async (req, res) => {
+  const result = await getScheduleStudents({
     driverUserId: req.driverUser.id,
     scheduleId: req.params.scheduleId,
   });
@@ -42,10 +50,13 @@ router.get("/schedules/:scheduleId/students", requireMockDriver, (req, res) => {
   }
 
   return res.json(successResponse(result));
-});
+}));
 
-router.post("/attendance/save", requireMockDriver, (req, res) => {
-  const result = saveMockAttendance(req.body || {});
+router.post("/attendance/save", asyncHandler(async (req, res) => {
+  const result = await saveAttendance({
+    ...(req.body || {}),
+    checkedByUserId: req.driverUser.id,
+  });
 
   if (!result.success) {
     return res.status(400).json(
@@ -54,6 +65,6 @@ router.post("/attendance/save", requireMockDriver, (req, res) => {
   }
 
   return res.json(successResponse(result.data));
-});
+}));
 
 module.exports = router;

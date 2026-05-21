@@ -1,26 +1,17 @@
-const { MOCK_DRIVER_TOKEN, MOCK_DRIVER_USERS } = require("../mocks/driver.mock");
+const {
+  findDriverById,
+  findDriverByLoginId,
+  toPublicDriverUser,
+} = require("../repositories/user.repository");
 
-function toPublicDriverUser(driverUser) {
-  return {
-    id: driverUser.id,
-    role: "driver",
-    accountId: driverUser.accountId,
-    displayName: driverUser.displayName,
-    vehicleId: driverUser.vehicleId,
-    vehicleName: driverUser.vehicleName,
-  };
-}
+const DEVELOPMENT_DRIVER_TOKEN = "mock-driver-token-car1";
+const DEVELOPMENT_DRIVER_ID = "driver_car1";
 
-function loginMockDriver({ accountId, password, pin }) {
+async function loginDriver({ accountId, password, pin }) {
   const credential = password || pin;
-  const driverUser = MOCK_DRIVER_USERS.find(
-    (user) =>
-      user.accountId === accountId &&
-      user.mockPin === credential &&
-      user.isActive,
-  );
+  const driverUser = accountId ? await findDriverByLoginId(accountId) : null;
 
-  if (!driverUser) {
+  if (!driverUser || driverUser.development_pin_hash !== credential) {
     return {
       success: false,
     };
@@ -28,7 +19,7 @@ function loginMockDriver({ accountId, password, pin }) {
 
   return {
     success: true,
-    token: MOCK_DRIVER_TOKEN,
+    token: DEVELOPMENT_DRIVER_TOKEN,
     user: toPublicDriverUser(driverUser),
   };
 }
@@ -43,18 +34,18 @@ function extractMockToken(req) {
   return req.get("x-mock-session-token") || "";
 }
 
-function getCurrentMockDriver(req) {
+async function getCurrentDriver(req) {
   const token = extractMockToken(req);
 
-  if (token !== MOCK_DRIVER_TOKEN) {
+  if (token !== DEVELOPMENT_DRIVER_TOKEN) {
     return null;
   }
 
-  const driverUser = MOCK_DRIVER_USERS.find((user) => user.isActive);
-  return driverUser ? toPublicDriverUser(driverUser) : null;
+  const driverUser = await findDriverById(DEVELOPMENT_DRIVER_ID);
+  return toPublicDriverUser(driverUser);
 }
 
 module.exports = {
-  getCurrentMockDriver,
-  loginMockDriver,
+  getCurrentDriver,
+  loginDriver,
 };

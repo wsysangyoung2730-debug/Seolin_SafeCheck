@@ -1,31 +1,17 @@
-const { MOCK_SCHEDULES } = require("../mocks/schedules.mock");
-const { MOCK_STUDENTS_BY_SCHEDULE } = require("../mocks/students.mock");
-const { MOCK_DRIVER_USERS } = require("../mocks/driver.mock");
-
-function getDriverVehicle(driverUserId) {
-  const driverUser = MOCK_DRIVER_USERS.find(
-    (user) => user.id === driverUserId && user.isActive,
-  );
-
-  if (!driverUser) {
-    return null;
-  }
-
-  return {
-    id: driverUser.vehicleId,
-    name: driverUser.vehicleName,
-  };
-}
+const {
+  findScheduleForVehicle,
+  findSchedulesByVehicleId,
+} = require("../repositories/schedule.repository");
+const { findStudentsByScheduleId } = require("../repositories/student.repository");
+const { findVehicleByDriverUserId } = require("../repositories/vehicle.repository");
 
 function getTodayDateValue() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function getTodayMockSchedules(driverUserId) {
-  const vehicle = getDriverVehicle(driverUserId);
-  const schedules = vehicle
-    ? MOCK_SCHEDULES.filter((schedule) => schedule.vehicleId === vehicle.id)
-    : [];
+async function getTodaySchedules(driverUserId) {
+  const vehicle = await findVehicleByDriverUserId(driverUserId);
+  const schedules = vehicle ? await findSchedulesByVehicleId(vehicle.id) : [];
 
   return {
     date: getTodayDateValue(),
@@ -34,16 +20,17 @@ function getTodayMockSchedules(driverUserId) {
   };
 }
 
-function getMockScheduleStudents({ driverUserId, scheduleId }) {
-  const vehicle = getDriverVehicle(driverUserId);
+async function getScheduleStudents({ driverUserId, scheduleId }) {
+  const vehicle = await findVehicleByDriverUserId(driverUserId);
 
   if (!vehicle) {
     return null;
   }
 
-  const schedule = MOCK_SCHEDULES.find(
-    (item) => item.id === scheduleId && item.vehicleId === vehicle.id,
-  );
+  const schedule = await findScheduleForVehicle({
+    scheduleId,
+    vehicleId: vehicle.id,
+  });
 
   if (!schedule) {
     return null;
@@ -51,13 +38,11 @@ function getMockScheduleStudents({ driverUserId, scheduleId }) {
 
   return {
     schedule,
-    students: (MOCK_STUDENTS_BY_SCHEDULE[scheduleId] || []).map((student) => ({
-      ...student,
-    })),
+    students: await findStudentsByScheduleId(scheduleId),
   };
 }
 
 module.exports = {
-  getMockScheduleStudents,
-  getTodayMockSchedules,
+  getScheduleStudents,
+  getTodaySchedules,
 };

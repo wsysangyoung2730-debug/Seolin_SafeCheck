@@ -1,31 +1,10 @@
+const { upsertAttendanceRecords } = require("../repositories/attendance.repository");
+
 const VALID_ATTENDANCE_STATUSES = new Set([
   "unchecked",
   "boarded",
   "not_boarded",
 ]);
-
-function getAttendanceSummary(records) {
-  return records.reduce(
-    (summary, record) => {
-      if (record.status === "boarded") {
-        summary.boarded += 1;
-      } else if (record.status === "not_boarded") {
-        summary.notBoarded += 1;
-      } else {
-        summary.unchecked += 1;
-      }
-
-      summary.total += 1;
-      return summary;
-    },
-    {
-      total: 0,
-      boarded: 0,
-      notBoarded: 0,
-      unchecked: 0,
-    },
-  );
-}
 
 function hasValidRecords(records) {
   return (
@@ -41,7 +20,13 @@ function hasValidRecords(records) {
   );
 }
 
-function saveMockAttendance({ date, vehicleId, scheduleId, records }) {
+async function saveAttendance({
+  date,
+  vehicleId,
+  scheduleId,
+  records,
+  checkedByUserId,
+}) {
   if (!date || !vehicleId || !scheduleId || !hasValidRecords(records)) {
     return {
       success: false,
@@ -49,16 +34,31 @@ function saveMockAttendance({ date, vehicleId, scheduleId, records }) {
     };
   }
 
+  if (!checkedByUserId) {
+    return {
+      success: false,
+      message: "출결 저장을 위한 기사님 정보가 없습니다.",
+    };
+  }
+
+  const result = await upsertAttendanceRecords({
+    date,
+    vehicleId,
+    scheduleId,
+    checkedByUserId,
+    records,
+  });
+
   return {
     success: true,
     data: {
-      savedAt: new Date().toISOString(),
-      summary: getAttendanceSummary(records),
-      isMockSave: true,
+      savedAt: result.savedAt,
+      summary: result.summary,
+      isMockSave: false,
     },
   };
 }
 
 module.exports = {
-  saveMockAttendance,
+  saveAttendance,
 };
