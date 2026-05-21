@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "../config/apiConfig.js";
+import { getStoredAdminSession } from "./adminSession.js";
 import { getStoredDriverSession } from "./driverSession.js";
 
 export class ApiClientError extends Error {
@@ -10,13 +11,21 @@ export class ApiClientError extends Error {
   }
 }
 
-function buildHeaders({ useAuth = true } = {}) {
+function getSessionForRole(authRole) {
+  if (authRole === "admin") {
+    return getStoredAdminSession();
+  }
+
+  return getStoredDriverSession();
+}
+
+function buildHeaders({ useAuth = true, authRole = "driver" } = {}) {
   const headers = {
     "Content-Type": "application/json",
   };
 
   if (useAuth) {
-    const session = getStoredDriverSession();
+    const session = getSessionForRole(authRole);
 
     if (session?.token) {
       headers.Authorization = `Bearer ${session.token}`;
@@ -26,10 +35,13 @@ function buildHeaders({ useAuth = true } = {}) {
   return headers;
 }
 
-async function request(path, { method = "GET", body, useAuth = true } = {}) {
+async function request(
+  path,
+  { method = "GET", body, useAuth = true, authRole = "driver" } = {},
+) {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method,
-    headers: buildHeaders({ useAuth }),
+    headers: buildHeaders({ useAuth, authRole }),
     body: body ? JSON.stringify(body) : undefined,
   });
 
@@ -68,6 +80,14 @@ export function apiPost(path, body, options) {
   return request(path, {
     ...options,
     method: "POST",
+    body,
+  });
+}
+
+export function apiPatch(path, body, options) {
+  return request(path, {
+    ...options,
+    method: "PATCH",
     body,
   });
 }

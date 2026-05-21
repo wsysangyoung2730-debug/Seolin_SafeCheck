@@ -2,11 +2,14 @@ const express = require("express");
 
 const { getCurrentUser } = require("../services/auth.service");
 const {
+  createStudent,
+  deactivateStudent,
   getAdminAttendanceRecords,
   getAdminOverview,
   getAdminSchedules,
   getAdminStudents,
   getAdminVehicles,
+  updateStudent,
 } = require("../services/admin.service");
 const { errorResponse, successResponse } = require("../utils/apiResponse");
 
@@ -49,6 +52,46 @@ router.get("/students", asyncHandler(async (req, res) => {
   const result = await getAdminStudents();
 
   res.json(successResponse(result));
+}));
+
+router.post("/students", asyncHandler(async (req, res) => {
+  const result = await createStudent(req.body || {});
+
+  if (!result.success) {
+    return res.status(400).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.status(201).json(successResponse(result.data));
+}));
+
+router.patch("/students/:studentId", asyncHandler(async (req, res) => {
+  const result = await updateStudent(req.params.studentId, req.body || {});
+
+  if (!result.success) {
+    const status = result.code === "STUDENT_NOT_FOUND" ? 404 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
+router.patch("/students/:studentId/deactivate", asyncHandler(async (req, res) => {
+  const result = await deactivateStudent(req.params.studentId);
+
+  if (!result.success) {
+    const status = result.code === "STUDENT_NOT_FOUND" ? 404 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
 }));
 
 router.get("/vehicles", asyncHandler(async (req, res) => {

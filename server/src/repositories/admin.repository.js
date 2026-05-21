@@ -70,6 +70,103 @@ async function findAdminStudents() {
   }));
 }
 
+async function createAdminStudent({ studentName, pickupPlace }) {
+  const randomSuffix = Math.random().toString(36).slice(2, 8);
+  const studentId = `student_admin_${Date.now()}_${randomSuffix}`;
+  const result = await pool.query(
+    `
+      insert into students (
+        id,
+        name,
+        parent_name,
+        parent_phone,
+        default_pickup_place,
+        memo,
+        is_active,
+        created_at,
+        updated_at
+      ) values (
+        $1, $2, null, null, $3, null, true, now(), now()
+      )
+      returning id, name, default_pickup_place, parent_phone, is_active
+    `,
+    [studentId, studentName, pickupPlace],
+  );
+
+  const row = result.rows[0];
+
+  return {
+    studentId: row.id,
+    studentName: row.name,
+    pickupPlace: row.default_pickup_place,
+    isActive: row.is_active,
+    parentContactStatus: row.parent_phone ? "registered" : "not_registered",
+  };
+}
+
+async function updateAdminStudent({
+  studentId,
+  studentName,
+  pickupPlace,
+  isActive,
+}) {
+  const result = await pool.query(
+    `
+      update students
+      set
+        name = $2,
+        default_pickup_place = $3,
+        is_active = $4,
+        updated_at = now()
+      where id = $1
+      returning id, name, default_pickup_place, parent_phone, is_active
+    `,
+    [studentId, studentName, pickupPlace, isActive],
+  );
+
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    studentId: row.id,
+    studentName: row.name,
+    pickupPlace: row.default_pickup_place,
+    isActive: row.is_active,
+    parentContactStatus: row.parent_phone ? "registered" : "not_registered",
+  };
+}
+
+async function deactivateAdminStudent(studentId) {
+  const result = await pool.query(
+    `
+      update students
+      set
+        is_active = false,
+        updated_at = now()
+      where id = $1
+      returning id, name, default_pickup_place, parent_phone, is_active
+    `,
+    [studentId],
+  );
+
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    studentId: row.id,
+    studentName: row.name,
+    pickupPlace: row.default_pickup_place,
+    isActive: row.is_active,
+    parentContactStatus: row.parent_phone ? "registered" : "not_registered",
+  };
+}
+
 async function findAdminVehicles() {
   const result = await pool.query(
     `
@@ -206,9 +303,12 @@ async function findAdminAttendanceRecords(filters = {}) {
 }
 
 module.exports = {
+  createAdminStudent,
+  deactivateAdminStudent,
   findAdminAttendanceRecords,
   findAdminSchedules,
   findAdminStudents,
   findAdminVehicles,
   getOverviewCounts,
+  updateAdminStudent,
 };

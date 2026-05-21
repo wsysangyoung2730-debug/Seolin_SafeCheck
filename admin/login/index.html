@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>관리자 로그인 | Seolin SafeCheck</title>
+    <link rel="stylesheet" href="../../src/styles/admin.css">
+  </head>
+  <body>
+    <main class="admin-login-shell">
+      <section class="login-brand" aria-label="서비스 소개">
+        <img
+          src="../../assets/images/seolin-logo-basic.png"
+          alt="서린태권도 로고"
+        >
+        <p class="eyebrow">서린태권도</p>
+        <h1>관리자 로그인</h1>
+        <p>원생 정보와 등원 차량 운영 데이터를 관리합니다.</p>
+      </section>
+
+      <section class="panel login-panel" aria-labelledby="login-title">
+        <form id="admin-login-form" class="form-stack" novalidate>
+          <div>
+            <p class="eyebrow">Seolin SafeCheck</p>
+            <h2 id="login-title">관리자 계정으로 로그인하세요</h2>
+          </div>
+
+          <label class="field">
+            <span>계정 ID</span>
+            <input
+              id="account-id"
+              name="accountId"
+              type="text"
+              autocomplete="username"
+              placeholder="예: admin"
+              aria-describedby="login-message"
+            >
+          </label>
+
+          <label class="field">
+            <span>비밀번호</span>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="비밀번호 입력"
+              aria-describedby="login-message"
+            >
+          </label>
+
+          <p id="login-message" class="message" role="status" aria-live="polite"></p>
+
+          <button id="login-button" class="primary-button" type="submit">
+            로그인
+          </button>
+        </form>
+
+        <p class="helper-note">로컬 개발용 계정: admin / 1234</p>
+      </section>
+    </main>
+
+    <script type="module" src="../../src/app/admin/login.js"></script>
+  </body>
+</html>
