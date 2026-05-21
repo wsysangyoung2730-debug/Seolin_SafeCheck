@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>기사님 로그인 | Seolin SafeCheck</title>
+    <link rel="stylesheet" href="../../src/styles/driver.css">
+  </head>
+  <body>
+    <main class="app-shell app-shell--center">
+      <section class="brand-block" aria-label="서비스 소개">
+        <p class="eyebrow">서린태권도</p>
+        <h1>Seolin SafeCheck</h1>
+        <p>등원 차량 탑승 확인</p>
+      </section>
+
+      <section class="panel" aria-labelledby="login-title">
+        <div class="section-header">
+          <p class="eyebrow">기사님 로그인</p>
+          <h2 id="login-title">호차 계정으로 로그인하세요</h2>
+          <p class="muted">처음 로그인하면 다음 접속부터 로그인 상태가 유지됩니다.</p>
+        </div>
+
+        <form id="driver-login-form" class="form-stack" novalidate>
+          <label class="field">
+            <span>호차 계정 ID</span>
+            <input
+              id="account-id"
+              name="accountId"
+              type="text"
+              autocomplete="username"
+              inputmode="text"
+              placeholder="예: car1"
+              aria-describedby="login-message"
+            >
+          </label>
+
+          <label class="field">
+            <span>비밀번호 또는 PIN</span>
+            <input
+              id="pin"
+              name="pin"
+              type="password"
+              autocomplete="current-password"
+              inputmode="numeric"
+              placeholder="PIN 입력"
+              aria-describedby="login-message"
+            >
+          </label>
+
+          <p id="login-message" class="message" role="status" aria-live="polite"></p>
+
+          <button id="login-button" class="primary-button" type="submit">
+            로그인
+          </button>
+        </form>
+
+        <p class="helper-note">개발용 mock 계정: car1 / 1234</p>
+      </section>
+    </main>
+
+    <script type="module" src="../../src/app/driver/login.js"></script>
+  </body>
+</html>

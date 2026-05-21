@@ -1,0 +1,276 @@
+:root {
+  --primary-navy: #1F2B7B;
+  --background: #F7F8FC;
+  --surface: #FFFFFF;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --success: #16A34A;
+  --warning: #F59E0B;
+  --danger: #DC2626;
+  --border: #E5E7EB;
+  --shadow: 0 18px 50px rgba(17, 24, 39, 0.10);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  width: min(100%, 520px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px 18px 32px;
+}
+
+.app-shell--center {
+  display: grid;
+  align-content: center;
+  gap: 22px;
+}
+
+.brand-block {
+  padding: 8px 2px;
+}
+
+.brand-block h1,
+.top-bar h1,
+.section-header h2,
+.vehicle-summary h2 {
+  margin: 0;
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+
+.brand-block h1 {
+  font-size: 34px;
+}
+
+.brand-block p:not(.eyebrow) {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--primary-navy);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.section-header {
+  margin-bottom: 20px;
+}
+
+.section-header h2,
+.vehicle-summary h2 {
+  font-size: 24px;
+}
+
+.muted {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.form-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  font-weight: 750;
+}
+
+.field input {
+  width: 100%;
+  min-height: 58px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 16px;
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font-size: 20px;
+}
+
+.field input:focus {
+  border-color: var(--primary-navy);
+  outline: 3px solid rgba(31, 43, 123, 0.16);
+}
+
+.primary-button,
+.secondary-button,
+.schedule-card {
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.primary-button {
+  min-height: 60px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--primary-navy);
+  color: #FFFFFF;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.primary-button:not(:disabled):active,
+.schedule-card:active {
+  transform: translateY(1px);
+}
+
+.secondary-button {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font-weight: 750;
+}
+
+.message {
+  min-height: 24px;
+  margin: 0;
+  color: var(--danger);
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.message[data-type="info"],
+.message--info {
+  color: var(--primary-navy);
+}
+
+.message[data-type="success"] {
+  color: var(--success);
+}
+
+.helper-note {
+  margin: 18px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.top-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.top-bar h1 {
+  font-size: 30px;
+}
+
+.vehicle-summary {
+  margin-bottom: 24px;
+}
+
+.date-label {
+  margin: 0 0 10px;
+  color: var(--text-secondary);
+  font-weight: 750;
+}
+
+.schedule-section {
+  display: grid;
+  gap: 16px;
+}
+
+.schedule-list {
+  display: grid;
+  gap: 12px;
+}
+
+.schedule-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  width: 100%;
+  min-height: 92px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  background: #FFFFFF;
+  color: var(--text-primary);
+  text-align: left;
+  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.06);
+}
+
+.schedule-card:focus,
+.secondary-button:focus,
+.primary-button:focus {
+  outline: 3px solid rgba(31, 43, 123, 0.18);
+  outline-offset: 2px;
+}
+
+.schedule-card:hover {
+  border-color: var(--primary-navy);
+  box-shadow: 0 14px 28px rgba(31, 43, 123, 0.12);
+}
+
+.schedule-card__time {
+  grid-row: span 2;
+  align-self: center;
+  min-width: 82px;
+  color: var(--primary-navy);
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.schedule-card__name {
+  font-size: 22px;
+  font-weight: 850;
+}
+
+.schedule-card__hint {
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.empty-state {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  background: #FFFFFF;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.5;
+}
+
+@media (min-width: 720px) {
+  .app-shell {
+    padding-top: 40px;
+  }
+}

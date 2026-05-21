@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>기사님 화면 | Seolin SafeCheck</title>
+    <link rel="stylesheet" href="../src/styles/driver.css">
+  </head>
+  <body>
+    <main class="app-shell app-shell--center">
+      <section class="panel" aria-label="기사님 화면 이동">
+        <p class="eyebrow">Seolin SafeCheck</p>
+        <h1>기사님 화면으로 이동 중입니다</h1>
+        <p class="muted">로그인 상태를 확인하고 알맞은 화면으로 이동합니다.</p>
+      </section>
+    </main>
+    <script type="module">
+      import { hasDriverSession } from "../src/services/auth/mockAuthService.js";
+
+      window.location.replace(hasDriverSession() ? "./home/" : "./login/");
+    </script>
+  </body>
+</html>
