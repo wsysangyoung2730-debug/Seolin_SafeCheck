@@ -24,7 +24,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -106,7 +107,8 @@ a {
   font-weight: 750;
 }
 
-.field input {
+.field input,
+.field select {
   width: 100%;
   min-height: 48px;
   border: 1px solid var(--border);
@@ -117,6 +119,7 @@ a {
 }
 
 .field input:focus,
+.field select:focus,
 .search-input:focus {
   border-color: var(--primary-navy);
   outline: 3px solid rgba(31, 43, 123, 0.16);
@@ -405,6 +408,49 @@ a {
   border-radius: 8px;
   padding: 24px;
   box-shadow: var(--shadow);
+}
+
+.assignment-dialog {
+  width: min(100% - 32px, 620px);
+}
+
+.assignment-list {
+  display: grid;
+  max-height: min(56vh, 460px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+.assignment-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.assignment-item:last-child {
+  border-bottom: 0;
+}
+
+.assignment-item input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+
+.assignment-item strong {
+  display: block;
+}
+
+.assignment-item span {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
 .student-dialog::backdrop {

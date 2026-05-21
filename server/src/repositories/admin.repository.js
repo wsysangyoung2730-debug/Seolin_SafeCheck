@@ -195,6 +195,119 @@ async function findAdminVehicles() {
   }));
 }
 
+async function createAdminVehicle({ vehicleName }) {
+  const randomSuffix = Math.random().toString(36).slice(2, 8);
+  const vehicleId = `vehicle_admin_${Date.now()}_${randomSuffix}`;
+  const result = await pool.query(
+    `
+      insert into vehicles (
+        id,
+        name,
+        driver_user_id,
+        is_active,
+        created_at,
+        updated_at
+      ) values (
+        $1, $2, null, true, now(), now()
+      )
+      returning id, name, is_active
+    `,
+    [vehicleId, vehicleName],
+  );
+
+  return findAdminVehicleById(result.rows[0].id);
+}
+
+async function updateAdminVehicle({ vehicleId, vehicleName, isActive }) {
+  const result = await pool.query(
+    `
+      update vehicles
+      set
+        name = $2,
+        is_active = $3,
+        updated_at = now()
+      where id = $1
+      returning id, name, is_active
+    `,
+    [vehicleId, vehicleName, isActive],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return findAdminVehicleById(result.rows[0].id);
+}
+
+async function deactivateAdminVehicle(vehicleId) {
+  const result = await pool.query(
+    `
+      update vehicles
+      set
+        is_active = false,
+        updated_at = now()
+      where id = $1
+      returning id, name, is_active
+    `,
+    [vehicleId],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return findAdminVehicleById(result.rows[0].id);
+}
+
+async function findAdminVehicleById(vehicleId) {
+  const result = await pool.query(
+    `
+      select
+        vehicles.id as vehicle_id,
+        vehicles.name as vehicle_name,
+        vehicles.is_active,
+        users.login_id as driver_account_id,
+        users.display_name as driver_display_name
+      from vehicles
+      left join users on users.id = vehicles.driver_user_id
+      where vehicles.id = $1
+      limit 1
+    `,
+    [vehicleId],
+  );
+
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    vehicleId: row.vehicle_id,
+    vehicleName: row.vehicle_name,
+    driver: row.driver_account_id
+      ? {
+          accountId: row.driver_account_id,
+          displayName: row.driver_display_name,
+        }
+      : null,
+    isActive: row.is_active,
+  };
+}
+
+async function findVehicleExists(vehicleId) {
+  const result = await pool.query(
+    `
+      select exists(
+        select 1 from vehicles where id = $1 and is_active = true
+      ) as exists
+    `,
+    [vehicleId],
+  );
+
+  return Boolean(result.rows[0]?.exists);
+}
+
 async function findAdminSchedules() {
   const result = await pool.query(
     `
@@ -224,6 +337,217 @@ async function findAdminSchedules() {
     assignedStudentCount: row.assigned_student_count,
     isActive: row.is_active,
   }));
+}
+
+async function createAdminSchedule({ vehicleId, scheduleName, startTime }) {
+  const randomSuffix = Math.random().toString(36).slice(2, 8);
+  const scheduleId = `schedule_admin_${Date.now()}_${randomSuffix}`;
+  const result = await pool.query(
+    `
+      insert into route_schedules (
+        id,
+        vehicle_id,
+        name,
+        start_time,
+        is_active,
+        created_at,
+        updated_at
+      ) values (
+        $1, $2, $3, $4, true, now(), now()
+      )
+      returning id
+    `,
+    [scheduleId, vehicleId, scheduleName, startTime],
+  );
+
+  return findAdminScheduleById(result.rows[0].id);
+}
+
+async function updateAdminSchedule({
+  scheduleId,
+  vehicleId,
+  scheduleName,
+  startTime,
+  isActive,
+}) {
+  const result = await pool.query(
+    `
+      update route_schedules
+      set
+        vehicle_id = $2,
+        name = $3,
+        start_time = $4,
+        is_active = $5,
+        updated_at = now()
+      where id = $1
+      returning id
+    `,
+    [scheduleId, vehicleId, scheduleName, startTime, isActive],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return findAdminScheduleById(result.rows[0].id);
+}
+
+async function deactivateAdminSchedule(scheduleId) {
+  const result = await pool.query(
+    `
+      update route_schedules
+      set
+        is_active = false,
+        updated_at = now()
+      where id = $1
+      returning id
+    `,
+    [scheduleId],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return findAdminScheduleById(result.rows[0].id);
+}
+
+async function findAdminScheduleById(scheduleId) {
+  const result = await pool.query(
+    `
+      select
+        route_schedules.id as schedule_id,
+        route_schedules.vehicle_id,
+        vehicles.name as vehicle_name,
+        route_schedules.name,
+        route_schedules.start_time,
+        route_schedules.is_active,
+        count(route_schedule_students.student_id)::int as assigned_student_count
+      from route_schedules
+      inner join vehicles on vehicles.id = route_schedules.vehicle_id
+      left join route_schedule_students
+        on route_schedule_students.route_schedule_id = route_schedules.id
+      where route_schedules.id = $1
+      group by route_schedules.id, vehicles.name
+      limit 1
+    `,
+    [scheduleId],
+  );
+
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    scheduleId: row.schedule_id,
+    vehicleId: row.vehicle_id,
+    vehicleName: row.vehicle_name,
+    name: row.name,
+    startTime: formatTimeValue(row.start_time),
+    assignedStudentCount: row.assigned_student_count,
+    isActive: row.is_active,
+  };
+}
+
+async function findScheduleAssignmentData(scheduleId) {
+  const schedule = await findAdminScheduleById(scheduleId);
+
+  if (!schedule) {
+    return null;
+  }
+
+  const assignedResult = await pool.query(
+    `
+      select student_id
+      from route_schedule_students
+      where route_schedule_id = $1
+      order by pickup_order nulls last, student_id asc
+    `,
+    [scheduleId],
+  );
+
+  const studentsResult = await pool.query(
+    `
+      select id, name, default_pickup_place
+      from students
+      where is_active = true
+      order by name asc
+    `,
+  );
+
+  const assignedStudentIds = new Set(
+    assignedResult.rows.map((row) => row.student_id),
+  );
+
+  return {
+    schedule,
+    assignedStudentIds: Array.from(assignedStudentIds),
+    students: studentsResult.rows.map((row) => ({
+      studentId: row.id,
+      studentName: row.name,
+      pickupPlace: row.default_pickup_place,
+      isAssigned: assignedStudentIds.has(row.id),
+    })),
+  };
+}
+
+async function replaceScheduleStudents({ scheduleId, studentIds }) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("begin");
+    await client.query(
+      "delete from route_schedule_students where route_schedule_id = $1",
+      [scheduleId],
+    );
+
+    for (const [index, studentId] of studentIds.entries()) {
+      await client.query(
+        `
+          insert into route_schedule_students (
+            id,
+            route_schedule_id,
+            student_id,
+            pickup_order,
+            pickup_place_override,
+            memo
+          ) values (
+            $1, $2, $3, $4, null, null
+          )
+        `,
+        [`rss_${scheduleId}_${studentId}`, scheduleId, studentId, index + 1],
+      );
+    }
+
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  return findScheduleAssignmentData(scheduleId);
+}
+
+async function findActiveStudentIds(studentIds) {
+  if (studentIds.length === 0) {
+    return [];
+  }
+
+  const result = await pool.query(
+    `
+      select id
+      from students
+      where id = any($1::text[])
+        and is_active = true
+    `,
+    [studentIds],
+  );
+
+  return result.rows.map((row) => row.id);
 }
 
 async function findAdminAttendanceRecords(filters = {}) {
@@ -304,11 +628,23 @@ async function findAdminAttendanceRecords(filters = {}) {
 
 module.exports = {
   createAdminStudent,
+  createAdminSchedule,
+  createAdminVehicle,
+  deactivateAdminSchedule,
   deactivateAdminStudent,
+  deactivateAdminVehicle,
   findAdminAttendanceRecords,
+  findAdminVehicleById,
+  findAdminScheduleById,
   findAdminSchedules,
   findAdminStudents,
   findAdminVehicles,
+  findActiveStudentIds,
+  findScheduleAssignmentData,
+  findVehicleExists,
   getOverviewCounts,
+  replaceScheduleStudents,
+  updateAdminSchedule,
   updateAdminStudent,
+  updateAdminVehicle,
 };

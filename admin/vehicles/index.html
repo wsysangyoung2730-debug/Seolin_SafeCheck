@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>차량 관리 | Seolin SafeCheck</title>
+    <link rel="stylesheet" href="../../src/styles/admin.css">
+  </head>
+  <body>
+    <div class="admin-shell">
+      <aside class="admin-sidebar" aria-label="관리자 메뉴">
+        <div class="sidebar-brand">
+          <img src="../../assets/images/seolin-logo-box.png" alt="서린태권도 로고">
+          <div>
+            <strong>Seolin SafeCheck</strong>
+            <span>관리자</span>
+          </div>
+        </div>
+        <nav class="admin-nav">
+          <a href="../home/">대시보드</a>
+          <a href="../students/">원생 관리</a>
+          <a href="./" aria-current="page">차량 관리</a>
+          <a href="../schedules/">시간표 관리</a>
+          <a href="#" aria-disabled="true" data-planned-nav>출결 기록 <span class="planned-label">준비 중</span></a>
+          <a href="#" aria-disabled="true" data-planned-nav>엑셀 관리 <span class="planned-label">준비 중</span></a>
+          <a href="#" aria-disabled="true" data-planned-nav>SMS 설정 <span class="planned-label">준비 중</span></a>
+        </nav>
+      </aside>
+
+      <main class="admin-main">
+        <header class="admin-header">
+          <div class="admin-user">
+            <strong id="admin-display-name">관리자</strong>
+            <span id="admin-account-id">계정 확인 중</span>
+          </div>
+          <button id="logout-button" class="secondary-button" type="button">로그아웃</button>
+        </header>
+
+        <section class="admin-content">
+          <div class="page-title">
+            <div>
+              <p class="eyebrow">차량 관리</p>
+              <h1>차량 목록</h1>
+              <p>등원 차량 이름과 활성 상태를 관리합니다.</p>
+            </div>
+            <button id="add-vehicle-button" class="primary-button" type="button">차량 추가</button>
+          </div>
+
+          <div class="toolbar">
+            <p id="vehicle-message" class="message" role="status" aria-live="polite"></p>
+          </div>
+
+          <section class="panel table-panel" aria-label="차량 목록">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">차량명</th>
+                  <th scope="col">기사님 계정</th>
+                  <th scope="col">상태</th>
+                  <th scope="col">차량 ID</th>
+                  <th scope="col">작업</th>
+                </tr>
+              </thead>
+              <tbody id="vehicle-table-body"></tbody>
+            </table>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="vehicle-dialog" class="student-dialog">
+      <form id="vehicle-form" class="form-stack" method="dialog" novalidate>
+        <h2 id="vehicle-dialog-title">차량 추가</h2>
+        <input id="vehicle-id" type="hidden">
+        <label class="field">
+          <span>차량명</span>
+          <input id="vehicle-name" name="vehicleName" type="text" autocomplete="off">
+        </label>
+        <label class="checkbox-field">
+          <input id="vehicle-is-active" name="isActive" type="checkbox" checked>
+          <span>활성 차량</span>
+        </label>
+        <div class="dialog-actions">
+          <button id="cancel-vehicle-button" class="secondary-button" type="button">취소</button>
+          <button id="save-vehicle-button" class="primary-button" type="submit">저장</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="vehicle-deactivate-dialog" class="student-dialog">
+      <form class="form-stack" method="dialog">
+        <h2>차량 비활성화</h2>
+        <p id="vehicle-deactivate-message" class="helper-note"></p>
+        <div class="dialog-actions">
+          <button id="cancel-vehicle-deactivate-button" class="secondary-button" type="button">취소</button>
+          <button id="confirm-vehicle-deactivate-button" class="danger-button" type="button">비활성화</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="../../src/app/admin/vehicles.js"></script>
+  </body>
+</html>

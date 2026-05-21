@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from "./apiClient.js";
+import { apiGet, apiPatch, apiPost, apiPut } from "./apiClient.js";
 
 const ADMIN_AUTH_OPTIONS = {
   authRole: "admin",
@@ -44,6 +44,95 @@ export async function deactivateAdminStudent(studentId) {
   return apiPatch(
     `/api/admin/students/${encodeURIComponent(studentId)}/deactivate`,
     {},
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
+export async function getAdminVehicles() {
+  return apiGet("/api/admin/vehicles", ADMIN_AUTH_OPTIONS);
+}
+
+export async function createAdminVehicle({ vehicleName }) {
+  return apiPost(
+    "/api/admin/vehicles",
+    { vehicleName },
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
+export async function updateAdminVehicle({ vehicleId, vehicleName, isActive }) {
+  return apiPatch(
+    `/api/admin/vehicles/${encodeURIComponent(vehicleId)}`,
+    {
+      vehicleName,
+      isActive,
+    },
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
+export async function deactivateAdminVehicle(vehicleId) {
+  return apiPatch(
+    `/api/admin/vehicles/${encodeURIComponent(vehicleId)}/deactivate`,
+    {},
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
+export async function getAdminSchedules() {
+  return apiGet("/api/admin/schedules", ADMIN_AUTH_OPTIONS);
+}
+
+export async function createAdminSchedule({ vehicleId, scheduleName, startTime }) {
+  return apiPost(
+    "/api/admin/schedules",
+    {
+      vehicleId,
+      scheduleName,
+      startTime,
+    },
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
+export async function updateAdminSchedule({
+  scheduleId,
+  vehicleId,
+  scheduleName,
+  startTime,
+  isActive,
+}) {
+  return apiPatch(
+    `/api/admin/schedules/${encodeURIComponent(scheduleId)}`,
+    {
+      vehicleId,
+      scheduleName,
+      startTime,
+      isActive,
+    },
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
+export async function deactivateAdminSchedule(scheduleId) {
+  return apiPatch(
+    `/api/admin/schedules/${encodeURIComponent(scheduleId)}/deactivate`,
+    {},
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
+export async function getAdminScheduleStudents(scheduleId) {
+  return apiGet(
+    `/api/admin/schedules/${encodeURIComponent(scheduleId)}/students`,
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
+export async function updateAdminScheduleStudents({ scheduleId, studentIds }) {
+  return apiPut(
+    `/api/admin/schedules/${encodeURIComponent(scheduleId)}/students`,
+    { studentIds },
     ADMIN_AUTH_OPTIONS,
   );
 }

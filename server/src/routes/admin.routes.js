@@ -2,14 +2,22 @@ const express = require("express");
 
 const { getCurrentUser } = require("../services/auth.service");
 const {
+  createSchedule,
   createStudent,
+  createVehicle,
+  deactivateSchedule,
   deactivateStudent,
+  deactivateVehicle,
   getAdminAttendanceRecords,
   getAdminOverview,
   getAdminSchedules,
   getAdminStudents,
   getAdminVehicles,
+  getScheduleStudents,
+  updateSchedule,
+  updateScheduleStudents,
   updateStudent,
+  updateVehicle,
 } = require("../services/admin.service");
 const { errorResponse, successResponse } = require("../utils/apiResponse");
 
@@ -100,10 +108,119 @@ router.get("/vehicles", asyncHandler(async (req, res) => {
   res.json(successResponse(result));
 }));
 
+router.post("/vehicles", asyncHandler(async (req, res) => {
+  const result = await createVehicle(req.body || {});
+
+  if (!result.success) {
+    return res.status(400).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.status(201).json(successResponse(result.data));
+}));
+
+router.patch("/vehicles/:vehicleId", asyncHandler(async (req, res) => {
+  const result = await updateVehicle(req.params.vehicleId, req.body || {});
+
+  if (!result.success) {
+    const status = result.code === "VEHICLE_NOT_FOUND" ? 404 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
+router.patch("/vehicles/:vehicleId/deactivate", asyncHandler(async (req, res) => {
+  const result = await deactivateVehicle(req.params.vehicleId);
+
+  if (!result.success) {
+    const status = result.code === "VEHICLE_NOT_FOUND" ? 404 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
 router.get("/schedules", asyncHandler(async (req, res) => {
   const result = await getAdminSchedules();
 
   res.json(successResponse(result));
+}));
+
+router.post("/schedules", asyncHandler(async (req, res) => {
+  const result = await createSchedule(req.body || {});
+
+  if (!result.success) {
+    return res.status(400).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.status(201).json(successResponse(result.data));
+}));
+
+router.patch("/schedules/:scheduleId", asyncHandler(async (req, res) => {
+  const result = await updateSchedule(req.params.scheduleId, req.body || {});
+
+  if (!result.success) {
+    const status = result.code === "SCHEDULE_NOT_FOUND" ? 404 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
+router.patch("/schedules/:scheduleId/deactivate", asyncHandler(async (req, res) => {
+  const result = await deactivateSchedule(req.params.scheduleId);
+
+  if (!result.success) {
+    const status = result.code === "SCHEDULE_NOT_FOUND" ? 404 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
+router.get("/schedules/:scheduleId/students", asyncHandler(async (req, res) => {
+  const result = await getScheduleStudents(req.params.scheduleId);
+
+  if (!result.success) {
+    return res.status(404).json(
+      errorResponse(result.code || "SCHEDULE_NOT_FOUND", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
+router.put("/schedules/:scheduleId/students", asyncHandler(async (req, res) => {
+  const result = await updateScheduleStudents(
+    req.params.scheduleId,
+    req.body || {},
+  );
+
+  if (!result.success) {
+    const status = result.code === "SCHEDULE_NOT_FOUND" ? 404 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
 }));
 
 router.get("/attendance-records", asyncHandler(async (req, res) => {

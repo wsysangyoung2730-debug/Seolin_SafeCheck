@@ -91,3 +91,11 @@ export function apiPatch(path, body, options) {
     body,
   });
 }
+
+export function apiPut(path, body, options) {
+  return request(path, {
+    ...options,
+    method: "PUT",
+    body,
+  });
+}
