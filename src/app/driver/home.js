@@ -54,11 +54,12 @@ function createScheduleButton(schedule) {
 
   const hint = document.createElement("span");
   hint.className = "schedule-card__hint";
-  hint.textContent = "탑승 확인은 다음 단계에서 진행";
+  hint.textContent = "원생 탑승 확인하기";
 
   button.append(time, name, hint);
   button.addEventListener("click", () => {
-    scheduleMessage.textContent = `${schedule.startTime} ${schedule.name} 시간대가 선택되었습니다. 출결 체크 화면은 다음 구현 단계에서 연결합니다.`;
+    scheduleMessage.textContent = `${schedule.startTime} ${schedule.name} 시간대로 이동합니다.`;
+    window.location.href = `../schedule/?scheduleId=${encodeURIComponent(schedule.id)}`;
   });
 
   return button;
@@ -86,6 +87,8 @@ logoutButton.addEventListener("click", () => {
   window.location.replace("../login/");
 });
 
-renderToday();
-renderDriverSummary();
-renderSchedules();
+if (session) {
+  renderToday();
+  renderDriverSummary();
+  renderSchedules();
+}

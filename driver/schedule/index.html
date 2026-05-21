@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>탑승 확인 | Seolin SafeCheck</title>
+    <link rel="stylesheet" href="../../src/styles/driver.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="top-bar" aria-label="시간대별 탑승 확인">
+        <div>
+          <p class="eyebrow">Seolin SafeCheck</p>
+          <h1>탑승 확인</h1>
+        </div>
+        <a class="secondary-link" href="../home/">시간대 목록</a>
+      </header>
+
+      <section class="panel vehicle-summary" aria-label="선택한 운행 정보">
+        <p id="today-label" class="date-label"></p>
+        <h2 id="schedule-title">시간대 정보를 불러오는 중입니다</h2>
+        <p id="vehicle-name" class="muted"></p>
+      </section>
+
+      <section id="schedule-error" class="panel hidden" aria-live="polite">
+        <h2 class="compact-title">시간대를 찾을 수 없습니다</h2>
+        <p class="muted">선택한 운행 시간대가 없거나 접근할 수 없습니다.</p>
+        <a class="primary-link-button" href="../home/">시간대 목록으로 돌아가기</a>
+      </section>
+
+      <section id="attendance-section" class="attendance-section hidden" aria-labelledby="student-list-title">
+        <div class="section-header">
+          <p class="eyebrow">원생 목록</p>
+          <h2 id="student-list-title">원생별 탑승 상태를 선택하세요</h2>
+          <p class="muted">상태 버튼을 눌러도 문자는 발송되지 않습니다. 전체 저장 후 mock 저장만 진행합니다.</p>
+        </div>
+
+        <div id="student-list" class="student-list" aria-live="polite"></div>
+
+        <section class="summary-panel" aria-label="현재 선택 요약">
+          <div>
+            <span>탑승</span>
+            <strong id="boarded-count">0명</strong>
+          </div>
+          <div>
+            <span>미탑승</span>
+            <strong id="not-boarded-count">0명</strong>
+          </div>
+          <div>
+            <span>미확인</span>
+            <strong id="unchecked-count">0명</strong>
+          </div>
+        </section>
+
+        <button id="save-button" class="primary-button sticky-save-button" type="button">
+          전체 저장
+        </button>
+
+        <p id="save-message" class="message message--info" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <dialog id="save-dialog" class="confirm-dialog" aria-labelledby="save-dialog-title">
+      <form method="dialog">
+        <h2 id="save-dialog-title">전체 저장할까요?</h2>
+        <p id="save-dialog-summary" class="muted"></p>
+        <div class="dialog-actions">
+          <button class="secondary-button" value="cancel" type="submit">취소</button>
+          <button id="confirm-save-button" class="primary-button" value="confirm" type="submit">
+            저장하기
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="../../src/app/driver/schedule.js"></script>
+  </body>
+</html>
