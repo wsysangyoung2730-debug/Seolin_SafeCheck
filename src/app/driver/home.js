@@ -71,7 +71,7 @@ function renderSchedules() {
   if (schedules.length === 0) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.textContent = "오늘 표시할 운행 시간대가 없습니다.";
+    empty.textContent = "등록된 시간대가 없습니다.";
     scheduleList.append(empty);
     return;
   }
@@ -82,6 +82,9 @@ function renderSchedules() {
 }
 
 logoutButton.addEventListener("click", () => {
+  logoutButton.disabled = true;
+  logoutButton.textContent = "로그아웃 중...";
+
   logoutDriver().finally(() => {
     window.location.replace("../login/");
   });

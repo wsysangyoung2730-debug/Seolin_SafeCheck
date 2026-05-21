@@ -9,9 +9,16 @@
   <body>
     <main class="app-shell">
       <header class="top-bar" aria-label="시간대별 탑승 확인">
-        <div>
-          <p class="eyebrow">Seolin SafeCheck</p>
-          <h1>탑승 확인</h1>
+        <div class="top-brand">
+          <img
+            class="brand-logo brand-logo--compact"
+            src="../../assets/images/seolin-logo-box.png"
+            alt="서린태권도 로고"
+          >
+          <div>
+            <p class="eyebrow">Seolin SafeCheck</p>
+            <h1>탑승 확인</h1>
+          </div>
         </div>
         <a class="secondary-link" href="../home/">시간대 목록</a>
       </header>
@@ -23,8 +30,8 @@
       </section>
 
       <section id="schedule-error" class="panel hidden" aria-live="polite">
-        <h2 class="compact-title">시간대를 찾을 수 없습니다</h2>
-        <p class="muted">선택한 운행 시간대가 없거나 접근할 수 없습니다.</p>
+        <h2 id="schedule-error-title" class="compact-title">시간대를 찾을 수 없습니다</h2>
+        <p id="schedule-error-message" class="muted">선택한 운행 시간대가 없거나 접근할 수 없습니다.</p>
         <a class="primary-link-button" href="../home/">시간대 목록으로 돌아가기</a>
       </section>
 

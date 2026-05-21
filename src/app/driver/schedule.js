@@ -14,6 +14,8 @@ const todayLabel = document.querySelector("#today-label");
 const scheduleTitle = document.querySelector("#schedule-title");
 const vehicleName = document.querySelector("#vehicle-name");
 const scheduleError = document.querySelector("#schedule-error");
+const scheduleErrorTitle = document.querySelector("#schedule-error-title");
+const scheduleErrorMessage = document.querySelector("#schedule-error-message");
 const attendanceSection = document.querySelector("#attendance-section");
 const studentList = document.querySelector("#student-list");
 const boardedCount = document.querySelector("#boarded-count");
@@ -41,6 +43,7 @@ let session = null;
 let selectedSchedule = null;
 let selectedVehicle = null;
 let attendanceRecords = [];
+let isSaving = false;
 
 function getTodayDateValue() {
   return new Date().toISOString().slice(0, 10);
@@ -51,11 +54,15 @@ function showMessage(text, type = "info") {
   saveMessage.dataset.type = type;
 }
 
-function setSaving(isSaving) {
-  saveButton.disabled = isSaving;
-  confirmSaveButton.disabled = isSaving;
-  saveButton.textContent = isSaving ? "저장 중..." : "전체 저장";
-  confirmSaveButton.textContent = isSaving ? "저장 중..." : "저장하기";
+function setSaving(saving) {
+  saveButton.disabled = saving;
+  confirmSaveButton.disabled = saving;
+  saveButton.textContent = saving ? "저장 중..." : "전체 저장";
+  confirmSaveButton.textContent = saving ? "저장 중..." : "저장하기";
+
+  studentList.querySelectorAll(".status-button").forEach((button) => {
+    button.disabled = saving;
+  });
 }
 
 function getCurrentSummary() {
@@ -70,6 +77,8 @@ function renderScheduleHeader() {
   if (!selectedSchedule || !selectedVehicle) {
     scheduleTitle.textContent = "시간대를 찾을 수 없습니다";
     vehicleName.textContent = "";
+    scheduleErrorTitle.textContent = "시간대를 찾을 수 없습니다";
+    scheduleErrorMessage.textContent = "선택한 운행 시간대가 없거나 접근할 수 없습니다.";
     scheduleError.classList.remove("hidden");
     attendanceSection.classList.add("hidden");
     return;
@@ -89,9 +98,21 @@ function renderSummary() {
   uncheckedCount.textContent = `${summary.unchecked}명`;
 }
 
+function getNextStatus(currentStatus, selectedStatus) {
+  return currentStatus === selectedStatus
+    ? ATTENDANCE_STATUSES.unchecked
+    : selectedStatus;
+}
+
 function updateRecordStatus(studentId, status) {
+  if (isSaving) {
+    return;
+  }
+
   attendanceRecords = attendanceRecords.map((record) =>
-    record.studentId === studentId ? { ...record, status } : record,
+    record.studentId === studentId
+      ? { ...record, status: getNextStatus(record.status, status) }
+      : record,
   );
   renderStudentList();
   renderSummary();
@@ -105,6 +126,7 @@ function createStatusButton(record, status) {
   button.type = "button";
   button.className = `status-button status-button--${status}`;
   button.textContent = ATTENDANCE_STATUS_LABEL[status];
+  button.disabled = isSaving;
   button.setAttribute("aria-pressed", String(isSelected));
   button.addEventListener("click", () => {
     updateRecordStatus(record.studentId, status);
@@ -127,7 +149,7 @@ function createStudentCard(record) {
   pickupPlace.textContent = `탑승 장소: ${record.pickupPlace}`;
 
   const status = document.createElement("strong");
-  status.className = "status-label";
+  status.className = `status-label status-label--${record.status}`;
   status.textContent = `현재 상태: ${ATTENDANCE_STATUS_LABEL[record.status]}`;
 
   details.append(name, pickupPlace, status);
@@ -149,7 +171,7 @@ function renderStudentList() {
   if (attendanceRecords.length === 0) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.textContent = "이 시간대에 표시할 원생이 없습니다.";
+    empty.textContent = "등록된 원생이 없습니다.";
     studentList.append(empty);
     return;
   }
@@ -160,6 +182,10 @@ function renderStudentList() {
 }
 
 function openSaveDialog() {
+  if (isSaving) {
+    return;
+  }
+
   const summary = getCurrentSummary();
 
   saveDialogSummary.textContent = `${selectedSchedule.startTime} ${selectedSchedule.name} · 총 ${summary.total}명 중 탑승 ${summary.boarded}명, 미탑승 ${summary.notBoarded}명, 미확인 ${summary.unchecked}명입니다.`;
@@ -177,6 +203,11 @@ function openSaveDialog() {
 }
 
 async function handleSave() {
+  if (isSaving) {
+    return;
+  }
+
+  isSaving = true;
   setSaving(true);
   showMessage("저장 중입니다.", "info");
 
@@ -188,22 +219,28 @@ async function handleSave() {
       records: attendanceRecords,
     });
 
+    isSaving = false;
     setSaving(false);
 
     const savedTime = timeFormatter.format(new Date(result.savedAt));
     const { summary } = result;
 
     showMessage(
-      `저장 완료: 탑승 ${summary.boarded}명, 미탑승 ${summary.notBoarded}명, 미확인 ${summary.unchecked}명 · ${savedTime}`,
+      `저장 완료: 총 ${summary.total}명, 탑승 ${summary.boarded}명, 미탑승 ${summary.notBoarded}명, 미확인 ${summary.unchecked}명 · ${savedTime}`,
       "success",
     );
   } catch {
+    isSaving = false;
     setSaving(false);
     showMessage("저장에 실패했습니다. 잠시 후 다시 시도해주세요.", "error");
   }
 }
 
 saveButton.addEventListener("click", () => {
+  if (isSaving) {
+    return;
+  }
+
   if (!selectedSchedule || !selectedVehicle) {
     showMessage("저장할 시간대 정보를 찾을 수 없습니다.", "error");
     return;
@@ -254,6 +291,8 @@ async function initializeSchedule() {
   } catch {
     scheduleTitle.textContent = "시간대 정보를 불러오지 못했습니다";
     vehicleName.textContent = "";
+    scheduleErrorTitle.textContent = "원생 명단을 불러오지 못했습니다";
+    scheduleErrorMessage.textContent = "시간대 정보를 확인한 뒤 다시 시도해주세요.";
     scheduleError.classList.remove("hidden");
     attendanceSection.classList.add("hidden");
   }

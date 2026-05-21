@@ -49,6 +49,25 @@ a {
   padding: 8px 2px;
 }
 
+.brand-logo {
+  display: block;
+  object-fit: contain;
+}
+
+.brand-logo--login {
+  width: min(260px, 78vw);
+  max-height: 132px;
+  margin: 0 0 18px;
+}
+
+.brand-logo--compact {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
 .brand-block h1,
 .top-bar h1,
 .section-header h2,
@@ -225,6 +244,13 @@ a {
   margin-bottom: 18px;
 }
 
+.top-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
 .top-bar h1 {
   font-size: 30px;
 }
@@ -339,10 +365,12 @@ a {
 
 .student-card--boarded {
   border-color: rgba(22, 163, 74, 0.60);
+  background: rgba(22, 163, 74, 0.05);
 }
 
 .student-card--not_boarded {
   border-color: rgba(220, 38, 38, 0.54);
+  background: rgba(220, 38, 38, 0.05);
 }
 
 .student-card__details h3 {
@@ -369,6 +397,16 @@ a {
   font-size: 16px;
 }
 
+.status-label--boarded {
+  background: rgba(22, 163, 74, 0.12);
+  color: #166534;
+}
+
+.status-label--not_boarded {
+  background: rgba(220, 38, 38, 0.11);
+  color: #991B1B;
+}
+
 .status-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -383,6 +421,11 @@ a {
   color: var(--text-primary);
   font-size: 19px;
   font-weight: 850;
+}
+
+.status-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 .status-button--boarded[aria-pressed="true"] {
