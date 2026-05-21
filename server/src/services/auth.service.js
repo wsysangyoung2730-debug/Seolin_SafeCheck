@@ -1,11 +1,33 @@
 const {
-  findDriverById,
+  findActiveUserById,
+  findAdminByLoginId,
   findDriverByLoginId,
+  toPublicAdminUser,
   toPublicDriverUser,
+  toPublicUser,
 } = require("../repositories/user.repository");
 
+const DEVELOPMENT_ADMIN_TOKEN = "mock-admin-token-admin";
+const DEVELOPMENT_ADMIN_ID = "admin_1";
 const DEVELOPMENT_DRIVER_TOKEN = "mock-driver-token-car1";
 const DEVELOPMENT_DRIVER_ID = "driver_car1";
+
+async function loginAdmin({ accountId, password, pin }) {
+  const credential = password || pin;
+  const adminUser = accountId ? await findAdminByLoginId(accountId) : null;
+
+  if (!adminUser || adminUser.development_pin_hash !== credential) {
+    return {
+      success: false,
+    };
+  }
+
+  return {
+    success: true,
+    token: DEVELOPMENT_ADMIN_TOKEN,
+    user: toPublicAdminUser(adminUser),
+  };
+}
 
 async function loginDriver({ accountId, password, pin }) {
   const credential = password || pin;
@@ -34,18 +56,46 @@ function extractMockToken(req) {
   return req.get("x-mock-session-token") || "";
 }
 
-async function getCurrentDriver(req) {
+async function getCurrentUser(req) {
   const token = extractMockToken(req);
 
-  if (token !== DEVELOPMENT_DRIVER_TOKEN) {
+  if (token === DEVELOPMENT_ADMIN_TOKEN) {
+    const adminUser = await findActiveUserById(DEVELOPMENT_ADMIN_ID);
+    return toPublicUser(adminUser);
+  }
+
+  if (token === DEVELOPMENT_DRIVER_TOKEN) {
+    const driverUser = await findActiveUserById(DEVELOPMENT_DRIVER_ID);
+    return toPublicUser(driverUser);
+  }
+
+  return null;
+}
+
+async function getCurrentDriver(req) {
+  const user = await getCurrentUser(req);
+
+  if (user?.role !== "driver") {
     return null;
   }
 
-  const driverUser = await findDriverById(DEVELOPMENT_DRIVER_ID);
-  return toPublicDriverUser(driverUser);
+  return user;
+}
+
+async function getCurrentAdmin(req) {
+  const user = await getCurrentUser(req);
+
+  if (user?.role !== "admin") {
+    return null;
+  }
+
+  return user;
 }
 
 module.exports = {
+  getCurrentAdmin,
   getCurrentDriver,
+  getCurrentUser,
+  loginAdmin,
   loginDriver,
 };

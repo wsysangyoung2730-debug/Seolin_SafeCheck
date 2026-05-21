@@ -1,6 +1,7 @@
 const cors = require("cors");
 const express = require("express");
 
+const adminRoutes = require("./routes/admin.routes");
 const authRoutes = require("./routes/auth.routes");
 const driverRoutes = require("./routes/driver.routes");
 const healthRoutes = require("./routes/health.routes");
@@ -19,6 +20,7 @@ function createApp() {
 
   app.use("/api/health", healthRoutes);
   app.use("/api/auth", authRoutes);
+  app.use("/api/admin", adminRoutes);
   app.use("/api/driver", driverRoutes);
 
   app.use((req, res) => {

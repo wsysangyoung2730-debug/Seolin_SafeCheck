@@ -189,6 +189,7 @@ seolin-safecheck/
 - 백엔드 mock API 기반 준비
 - PostgreSQL 로컬 DB 스키마, seed, driver API DB 연동 준비
 - 기사님용 정적 프론트엔드와 driver API 연동
+- 관리자 인증/권한 기반과 초기 read-only admin API 준비
 
 ## 10. 추천 다음 단계
 
@@ -196,4 +197,5 @@ seolin-safecheck/
 2. 개발/운영 API base URL 설정 방식 확정
 3. 운영용 인증 방식 결정
 4. 관리자용 최소 데이터 관리 화면 구현
-5. 개발 환경에서는 SMS mock provider를 먼저 사용
+5. 관리자 CRUD API 범위 확정
+6. 개발 환경에서는 SMS mock provider를 먼저 사용

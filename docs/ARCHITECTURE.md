@@ -385,6 +385,7 @@ interface SmsLog {
 ### 7.2 관리자 로그인
 
 - 관리자 ID/PW 사용
+- 현재 로컬 개발 환경은 `POST /api/auth/admin/login` 개발용 mock 토큰을 사용합니다.
 - 전체 데이터 접근 가능
 - 관리자 권한이 없는 사용자는 관리자 API 접근 불가
 - 관리자 작업은 가능하면 감사 로그 또는 변경 이력을 남기는 방향을 권장합니다.
@@ -393,49 +394,51 @@ interface SmsLog {
 
 ```txt
 Auth
-POST /api/auth/login
+POST /api/auth/driver/login
+POST /api/auth/admin/login
 POST /api/auth/logout
 GET  /api/auth/me
 
 Driver
-GET  /api/driver/today
-GET  /api/driver/schedules
+GET  /api/driver/schedules/today
 GET  /api/driver/schedules/:scheduleId/students
 POST /api/driver/attendance/save
-POST /api/driver/temporary-students
+
+Admin - Foundation
+GET    /api/admin/overview
 
 Admin - Vehicles
 GET    /api/admin/vehicles
-POST   /api/admin/vehicles
-PATCH  /api/admin/vehicles/:id
-DELETE /api/admin/vehicles/:id
+POST   /api/admin/vehicles          (planned)
+PATCH  /api/admin/vehicles/:id      (planned)
+DELETE /api/admin/vehicles/:id      (planned)
 
 Admin - Students
 GET    /api/admin/students
-POST   /api/admin/students
-PATCH  /api/admin/students/:id
-DELETE /api/admin/students/:id
+POST   /api/admin/students          (planned)
+PATCH  /api/admin/students/:id      (planned)
+DELETE /api/admin/students/:id      (planned)
 
 Admin - Schedules
 GET    /api/admin/schedules
-POST   /api/admin/schedules
-PATCH  /api/admin/schedules/:id
-DELETE /api/admin/schedules/:id
+POST   /api/admin/schedules         (planned)
+PATCH  /api/admin/schedules/:id     (planned)
+DELETE /api/admin/schedules/:id     (planned)
 
 Admin - Records
-GET    /api/admin/attendance
-GET    /api/admin/sms-logs
+GET    /api/admin/attendance-records
+GET    /api/admin/sms-logs          (planned)
 
 Excel
-POST /api/admin/excel/import
-GET  /api/admin/excel/export
+POST /api/admin/excel/import        (planned)
+GET  /api/admin/excel/export        (planned)
 
 Settings
-GET   /api/admin/settings
-PATCH /api/admin/settings
+GET   /api/admin/settings           (planned)
+PATCH /api/admin/settings           (planned)
 ```
 
-API 응답 형식은 추후 구현 시 통일합니다.
+현재 구현된 admin API는 인증/권한 기반과 read-only 조회 API입니다. 차량, 원생, 일정 CRUD, SMS, Excel 처리는 후속 작업에서 구현합니다.
 
 ```ts
 interface ApiResponse<T> {

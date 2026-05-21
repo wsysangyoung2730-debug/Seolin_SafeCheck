@@ -1,7 +1,8 @@
 const express = require("express");
 
 const {
-  getCurrentDriver,
+  getCurrentUser,
+  loginAdmin,
   loginDriver,
 } = require("../services/auth.service");
 const { errorResponse, successResponse } = require("../utils/apiResponse");
@@ -33,8 +34,27 @@ router.post("/driver/login", asyncHandler(async (req, res) => {
   );
 }));
 
+router.post("/admin/login", asyncHandler(async (req, res) => {
+  const { accountId, password, pin } = req.body || {};
+  const result = await loginAdmin({ accountId, password, pin });
+
+  if (!result.success) {
+    return res.status(401).json(
+      errorResponse("INVALID_CREDENTIALS", "계정 ID 또는 PIN이 올바르지 않습니다."),
+    );
+  }
+
+  return res.json(
+    successResponse({
+      token: result.token,
+      user: result.user,
+      isMockSession: true,
+    }),
+  );
+}));
+
 router.get("/me", asyncHandler(async (req, res) => {
-  const user = await getCurrentDriver(req);
+  const user = await getCurrentUser(req);
 
   if (!user) {
     return res.status(401).json(

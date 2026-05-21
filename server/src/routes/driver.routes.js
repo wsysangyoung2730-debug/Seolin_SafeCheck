@@ -1,6 +1,6 @@
 const express = require("express");
 
-const { getCurrentDriver } = require("../services/auth.service");
+const { getCurrentUser } = require("../services/auth.service");
 const {
   getScheduleStudents,
   getTodaySchedules,
@@ -17,11 +17,17 @@ function asyncHandler(handler) {
 }
 
 async function requireDriver(req, res, next) {
-  const user = await getCurrentDriver(req);
+  const user = await getCurrentUser(req);
 
   if (!user) {
     return res.status(401).json(
       errorResponse("UNAUTHORIZED", "로그인이 필요합니다."),
+    );
+  }
+
+  if (user.role !== "driver") {
+    return res.status(403).json(
+      errorResponse("FORBIDDEN", "접근 권한이 없습니다."),
     );
   }
 
