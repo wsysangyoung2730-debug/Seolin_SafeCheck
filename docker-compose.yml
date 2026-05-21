@@ -1,0 +1,13 @@
+services:
+  backend:
+    build:
+      context: ./server
+    container_name: seolin-safecheck-backend
+    env_file:
+      - ./server/.env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+# DB service is intentionally not included in this task.
+# PostgreSQL or MariaDB will be added in a later DB integration task.

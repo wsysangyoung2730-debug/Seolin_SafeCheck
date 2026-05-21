@@ -1,0 +1,19 @@
+{
+  "name": "seolin-safecheck-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Seolin SafeCheck MVP mock API backend",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/app.js && node --check src/server.js && node --check src/routes/health.routes.js && node --check src/routes/auth.routes.js && node --check src/routes/driver.routes.js && node --check src/services/auth.service.js && node --check src/services/schedule.service.js && node --check src/services/attendance.service.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
