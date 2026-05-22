@@ -211,3 +211,21 @@ admin/vehicles/index.html
 admin/schedules/index.html
 admin/attendance/index.html
 ```
+
+## 11. 로컬 개발 DB 초기화
+
+12.2 단계부터 시간표는 요일별 구조를 사용하므로 개발 DB의 `route_schedules` 테이블에 `day_of_week` 컬럼이 필요합니다. 기존 로컬 DB에서 관리자 시간표 또는 기사님 시간표 API가 서버 오류를 내면 개발 DB를 다시 초기화합니다.
+
+```bash
+cd server
+export DATABASE_URL=postgres://seolin_user:seolin_password@localhost:5432/seolin_safecheck
+npm run db:reset:dev
+npm run dev
+```
+
+Docker Compose의 기존 PostgreSQL 볼륨이 오래된 스키마를 유지하고 있다면 개발 환경에서만 아래 명령으로 볼륨을 지운 뒤 다시 띄울 수 있습니다. `docker compose down -v`는 로컬 개발 DB 데이터를 삭제합니다.
+
+```bash
+docker compose down -v
+docker compose up -d
+```
