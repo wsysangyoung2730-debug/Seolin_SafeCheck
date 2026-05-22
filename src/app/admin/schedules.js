@@ -111,7 +111,9 @@ function renderWeekdayButtons() {
   WEEKDAYS.forEach((weekday) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "selector-button";
+    button.className = weekday.value === selectedDayOfWeek
+      ? "selector-button selector-button--selected"
+      : "selector-button";
     button.textContent = weekday.label;
     button.setAttribute("aria-pressed", String(weekday.value === selectedDayOfWeek));
     button.addEventListener("click", async () => {
@@ -139,7 +141,9 @@ function renderVehicleButtons() {
   activeVehicles.forEach((vehicle) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "selector-button";
+    button.className = vehicle.vehicleId === selectedVehicleId
+      ? "selector-button selector-button--selected"
+      : "selector-button";
     button.textContent = vehicle.vehicleName;
     button.setAttribute("aria-pressed", String(vehicle.vehicleId === selectedVehicleId));
     button.addEventListener("click", async () => {

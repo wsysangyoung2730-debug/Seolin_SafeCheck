@@ -374,10 +374,12 @@ a {
   cursor: pointer;
 }
 
-.selector-button[aria-pressed="true"] {
-  border-color: var(--primary);
-  background: var(--primary);
+.selector-button[aria-pressed="true"],
+.selector-button--selected {
+  border-color: var(--primary-navy);
+  background: var(--primary-navy);
   color: #FFFFFF;
+  box-shadow: 0 8px 18px rgba(31, 43, 123, 0.18);
 }
 
 .selector-empty {
