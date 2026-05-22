@@ -342,6 +342,49 @@ a {
   padding: 18px;
 }
 
+.schedule-selector {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 18px;
+}
+
+.selector-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.selector-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selector-button {
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.selector-button[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #FFFFFF;
+}
+
+.selector-empty {
+  color: var(--text-secondary);
+  font-weight: 750;
+}
+
 .search-input {
   width: min(360px, 100%);
   min-height: 42px;

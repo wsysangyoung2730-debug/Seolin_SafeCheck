@@ -13,10 +13,13 @@ import { bindPlannedNavigation, requireAdminSession } from "./layout.js";
 const scheduleTableBody = document.querySelector("#schedule-table-body");
 const scheduleMessage = document.querySelector("#schedule-message");
 const addButton = document.querySelector("#add-schedule-button");
+const weekdayButtons = document.querySelector("#weekday-buttons");
+const vehicleButtons = document.querySelector("#vehicle-buttons");
 const dialog = document.querySelector("#schedule-dialog");
 const form = document.querySelector("#schedule-form");
 const dialogTitle = document.querySelector("#schedule-dialog-title");
 const scheduleIdInput = document.querySelector("#schedule-id");
+const scheduleContext = document.querySelector("#schedule-context");
 const vehicleSelect = document.querySelector("#schedule-vehicle");
 const scheduleNameInput = document.querySelector("#schedule-name");
 const startTimeInput = document.querySelector("#schedule-start-time");
@@ -36,9 +39,43 @@ const confirmDeactivateButton = document.querySelector("#confirm-schedule-deacti
 
 let schedules = [];
 let vehicles = [];
+let selectedDayOfWeek = getTodayDayOfWeek();
+let selectedVehicleId = "";
 let selectedAssignmentSchedule = null;
 let pendingDeactivateSchedule = null;
 let isSaving = false;
+
+const WEEKDAYS = [
+  { value: "monday", label: "월" },
+  { value: "tuesday", label: "화" },
+  { value: "wednesday", label: "수" },
+  { value: "thursday", label: "목" },
+  { value: "friday", label: "금" },
+  { value: "saturday", label: "토" },
+  { value: "sunday", label: "일" },
+];
+
+function getTodayDayOfWeek() {
+  const values = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ];
+
+  return values[new Date().getDay()];
+}
+
+function getDayLabel(dayOfWeek) {
+  return WEEKDAYS.find((weekday) => weekday.value === dayOfWeek)?.label || "";
+}
+
+function getSelectedVehicle() {
+  return vehicles.find((vehicle) => vehicle.vehicleId === selectedVehicleId) || null;
+}
 
 function setMessage(text, type = "info") {
   scheduleMessage.textContent = text;
@@ -55,15 +92,63 @@ function renderStatusBadge(item) {
 function renderVehicleOptions(selectedVehicleId = "") {
   vehicleSelect.replaceChildren();
 
-  vehicles
-    .filter((vehicle) => vehicle.isActive || vehicle.vehicleId === selectedVehicleId)
-    .forEach((vehicle) => {
-      const option = document.createElement("option");
-      option.value = vehicle.vehicleId;
-      option.textContent = vehicle.vehicleName;
-      option.selected = vehicle.vehicleId === selectedVehicleId;
-      vehicleSelect.append(option);
+  const vehicle = vehicles.find((item) => item.vehicleId === selectedVehicleId);
+
+  if (!vehicle) {
+    return;
+  }
+
+  const option = document.createElement("option");
+  option.value = vehicle.vehicleId;
+  option.textContent = vehicle.vehicleName;
+  option.selected = true;
+  vehicleSelect.append(option);
+}
+
+function renderWeekdayButtons() {
+  weekdayButtons.replaceChildren();
+
+  WEEKDAYS.forEach((weekday) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "selector-button";
+    button.textContent = weekday.label;
+    button.ariaPressed = String(weekday.value === selectedDayOfWeek);
+    button.addEventListener("click", async () => {
+      selectedDayOfWeek = weekday.value;
+      renderWeekdayButtons();
+      await loadSchedules();
     });
+    weekdayButtons.append(button);
+  });
+}
+
+function renderVehicleButtons() {
+  vehicleButtons.replaceChildren();
+
+  const activeVehicles = vehicles.filter((vehicle) => vehicle.isActive);
+
+  if (activeVehicles.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "selector-empty";
+    empty.textContent = "선택할 수 있는 활성 차량이 없습니다.";
+    vehicleButtons.append(empty);
+    return;
+  }
+
+  activeVehicles.forEach((vehicle) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "selector-button";
+    button.textContent = vehicle.vehicleName;
+    button.ariaPressed = String(vehicle.vehicleId === selectedVehicleId);
+    button.addEventListener("click", async () => {
+      selectedVehicleId = vehicle.vehicleId;
+      renderVehicleButtons();
+      await loadSchedules();
+    });
+    vehicleButtons.append(button);
+  });
 }
 
 function renderSchedules() {
@@ -74,7 +159,9 @@ function renderSchedules() {
     const cell = document.createElement("td");
     cell.colSpan = 6;
     cell.className = "table-empty";
-    cell.textContent = "등록된 시간표가 없습니다.";
+    cell.textContent = selectedVehicleId
+      ? "선택한 요일과 차량에 등록된 시간표가 없습니다."
+      : "활성 차량을 먼저 등록해주세요.";
     row.append(cell);
     scheduleTableBody.append(row);
     return;
@@ -82,6 +169,7 @@ function renderSchedules() {
 
   schedules.forEach((schedule) => {
     const row = document.createElement("tr");
+    row.className = schedule.isActive ? "" : "is-inactive";
 
     const vehicleCell = document.createElement("td");
     vehicleCell.textContent = schedule.vehicleName;
@@ -127,12 +215,21 @@ function renderSchedules() {
 }
 
 function openScheduleDialog(schedule = null) {
+  if (!selectedVehicleId) {
+    setMessage("활성 차량이 없어 시간표를 추가할 수 없습니다.", "error");
+    return;
+  }
+
   form.reset();
   scheduleIdInput.value = schedule?.scheduleId || "";
-  renderVehicleOptions(schedule?.vehicleId || vehicles[0]?.vehicleId || "");
+  const vehicleId = schedule?.vehicleId || selectedVehicleId;
+  renderVehicleOptions(vehicleId);
+  const vehicle = vehicles.find((item) => item.vehicleId === vehicleId);
   scheduleNameInput.value = schedule?.name || "등원";
   startTimeInput.value = schedule?.startTime || "";
   isActiveInput.checked = schedule ? schedule.isActive : true;
+  scheduleContext.textContent =
+    `${getDayLabel(schedule?.dayOfWeek || selectedDayOfWeek)}요일 · ${vehicle?.vehicleName || "선택 차량"}`;
   dialogTitle.textContent = schedule ? "시간표 정보 수정" : "시간표 추가";
   saveButton.textContent = schedule ? "수정 저장" : "시간표 추가";
   dialog.showModal();
@@ -147,6 +244,9 @@ function getFormValues() {
   return {
     scheduleId: scheduleIdInput.value,
     vehicleId: vehicleSelect.value,
+    dayOfWeek: scheduleIdInput.value
+      ? schedules.find((schedule) => schedule.scheduleId === scheduleIdInput.value)?.dayOfWeek
+      : selectedDayOfWeek,
     scheduleName: scheduleNameInput.value.trim(),
     startTime: startTimeInput.value,
     isActive: isActiveInput.checked,
@@ -185,15 +285,52 @@ async function loadBaseData() {
   setMessage("시간표 정보를 불러오는 중입니다.", "info");
 
   try {
-    const [vehicleData, scheduleData] = await Promise.all([
-      getAdminVehicles(),
-      getAdminSchedules(),
-    ]);
+    const vehicleData = await getAdminVehicles();
     vehicles = vehicleData.vehicles || [];
-    schedules = scheduleData.schedules || [];
-    renderVehicleOptions();
+    const activeVehicles = vehicles.filter((vehicle) => vehicle.isActive);
+    selectedVehicleId = activeVehicles[0]?.vehicleId || "";
+    renderWeekdayButtons();
+    renderVehicleButtons();
+    await loadSchedules();
+  } catch (error) {
+    vehicles = [];
+    schedules = [];
     renderSchedules();
-    setMessage(`시간표 ${schedules.length}개를 불러왔습니다.`, "success");
+    setMessage(
+      error instanceof ApiClientError
+        ? error.message
+        : "시간표 정보를 불러오지 못했습니다.",
+      "error",
+    );
+  }
+}
+
+async function loadSchedules() {
+  renderWeekdayButtons();
+  renderVehicleButtons();
+
+  if (!selectedVehicleId) {
+    schedules = [];
+    addButton.disabled = true;
+    renderSchedules();
+    setMessage("선택할 수 있는 활성 차량이 없습니다.", "info");
+    return;
+  }
+
+  addButton.disabled = false;
+  setMessage("시간표 정보를 불러오는 중입니다.", "info");
+
+  try {
+    const scheduleData = await getAdminSchedules({
+      dayOfWeek: selectedDayOfWeek,
+      vehicleId: selectedVehicleId,
+    });
+    schedules = scheduleData.schedules || [];
+    renderSchedules();
+    setMessage(
+      `${getDayLabel(selectedDayOfWeek)}요일 ${getSelectedVehicle()?.vehicleName || ""} 시간표 ${schedules.length}개를 불러왔습니다.`,
+      "success",
+    );
   } catch (error) {
     schedules = [];
     renderSchedules();
@@ -231,7 +368,7 @@ async function handleSave(event) {
 
     closeScheduleDialog();
     setMessage("시간표 정보를 저장했습니다.", "success");
-    await loadBaseData();
+    await loadSchedules();
   } catch (error) {
     setMessage(
       error instanceof ApiClientError
@@ -314,7 +451,7 @@ async function handleAssignmentSave(event) {
     assignmentDialog.close();
     selectedAssignmentSchedule = null;
     setMessage("원생 배정을 저장했습니다.", "success");
-    await loadBaseData();
+    await loadSchedules();
   } catch (error) {
     setMessage(
       error instanceof ApiClientError
@@ -344,7 +481,7 @@ async function confirmDeactivate() {
   try {
     await deactivateAdminSchedule(pendingDeactivateSchedule.scheduleId);
     setMessage("시간표를 비활성화했습니다.", "success");
-    await loadBaseData();
+    await loadSchedules();
   } catch (error) {
     setMessage(
       error instanceof ApiClientError

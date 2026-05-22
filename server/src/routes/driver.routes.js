@@ -38,7 +38,7 @@ async function requireDriver(req, res, next) {
 router.use(asyncHandler(requireDriver));
 
 router.get("/schedules/today", asyncHandler(async (req, res) => {
-  const result = await getTodaySchedules(req.driverUser.id);
+  const result = await getTodaySchedules(req.driverUser.id, req.query.date);
 
   res.json(successResponse(result));
 }));

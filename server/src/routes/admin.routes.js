@@ -149,7 +149,10 @@ router.patch("/vehicles/:vehicleId/deactivate", asyncHandler(async (req, res) =>
 }));
 
 router.get("/schedules", asyncHandler(async (req, res) => {
-  const result = await getAdminSchedules();
+  const result = await getAdminSchedules({
+    dayOfWeek: req.query.dayOfWeek,
+    vehicleId: req.query.vehicleId,
+  });
 
   res.json(successResponse(result));
 }));

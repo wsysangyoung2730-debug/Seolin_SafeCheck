@@ -50,6 +50,17 @@
             <p id="schedule-message" class="message" role="status" aria-live="polite"></p>
           </div>
 
+          <section class="panel schedule-selector" aria-label="요일 및 차량 선택">
+            <div>
+              <span class="selector-label">요일</span>
+              <div id="weekday-buttons" class="selector-buttons"></div>
+            </div>
+            <div>
+              <span class="selector-label">차량</span>
+              <div id="vehicle-buttons" class="selector-buttons"></div>
+            </div>
+          </section>
+
           <section class="panel table-panel" aria-label="시간표 목록">
             <table class="data-table">
               <thead>
@@ -73,9 +84,10 @@
       <form id="schedule-form" class="form-stack" method="dialog" novalidate>
         <h2 id="schedule-dialog-title">시간표 추가</h2>
         <input id="schedule-id" type="hidden">
+        <p id="schedule-context" class="helper-note"></p>
         <label class="field">
           <span>차량</span>
-          <select id="schedule-vehicle" name="vehicleId"></select>
+          <select id="schedule-vehicle" name="vehicleId" disabled></select>
         </label>
         <label class="field">
           <span>시간대 이름</span>

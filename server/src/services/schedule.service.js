@@ -11,16 +11,36 @@ function getTodayDateValue() {
   return today.toISOString().slice(0, 10);
 }
 
+const WEEKDAYS = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+];
+
+function getDayOfWeekFromDate(date) {
+  const [year, month, day] = normalizeDateValue(date).split("-").map(Number);
+  return WEEKDAYS[new Date(year, month - 1, day).getDay()];
+}
+
 function normalizeDateValue(date) {
   return /^\d{4}-\d{2}-\d{2}$/.test(date || "") ? date : getTodayDateValue();
 }
 
-async function getTodaySchedules(driverUserId) {
+async function getTodaySchedules(driverUserId, date) {
   const vehicle = await findVehicleByDriverUserId(driverUserId);
-  const schedules = vehicle ? await findSchedulesByVehicleId(vehicle.id) : [];
+  const targetDate = normalizeDateValue(date);
+  const dayOfWeek = getDayOfWeekFromDate(targetDate);
+  const schedules = vehicle
+    ? await findSchedulesByVehicleId({ vehicleId: vehicle.id, dayOfWeek })
+    : [];
 
   return {
-    date: getTodayDateValue(),
+    date: targetDate,
+    dayOfWeek,
     vehicle,
     schedules,
   };

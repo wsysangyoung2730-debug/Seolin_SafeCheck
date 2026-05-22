@@ -79,15 +79,36 @@ export async function deactivateAdminVehicle(vehicleId) {
   );
 }
 
-export async function getAdminSchedules() {
-  return apiGet("/api/admin/schedules", ADMIN_AUTH_OPTIONS);
+export async function getAdminSchedules({ dayOfWeek, vehicleId } = {}) {
+  const query = new URLSearchParams();
+
+  if (dayOfWeek) {
+    query.set("dayOfWeek", dayOfWeek);
+  }
+
+  if (vehicleId) {
+    query.set("vehicleId", vehicleId);
+  }
+
+  const queryString = query.toString();
+
+  return apiGet(
+    `/api/admin/schedules${queryString ? `?${queryString}` : ""}`,
+    ADMIN_AUTH_OPTIONS,
+  );
 }
 
-export async function createAdminSchedule({ vehicleId, scheduleName, startTime }) {
+export async function createAdminSchedule({
+  vehicleId,
+  dayOfWeek,
+  scheduleName,
+  startTime,
+}) {
   return apiPost(
     "/api/admin/schedules",
     {
       vehicleId,
+      dayOfWeek,
       scheduleName,
       startTime,
     },
@@ -98,6 +119,7 @@ export async function createAdminSchedule({ vehicleId, scheduleName, startTime }
 export async function updateAdminSchedule({
   scheduleId,
   vehicleId,
+  dayOfWeek,
   scheduleName,
   startTime,
   isActive,
@@ -106,6 +128,7 @@ export async function updateAdminSchedule({
     `/api/admin/schedules/${encodeURIComponent(scheduleId)}`,
     {
       vehicleId,
+      dayOfWeek,
       scheduleName,
       startTime,
       isActive,

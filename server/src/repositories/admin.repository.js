@@ -308,13 +308,29 @@ async function findVehicleExists(vehicleId) {
   return Boolean(result.rows[0]?.exists);
 }
 
-async function findAdminSchedules() {
+async function findAdminSchedules({ dayOfWeek, vehicleId } = {}) {
+  const where = [];
+  const values = [];
+
+  if (dayOfWeek) {
+    values.push(dayOfWeek);
+    where.push(`route_schedules.day_of_week = $${values.length}`);
+  }
+
+  if (vehicleId) {
+    values.push(vehicleId);
+    where.push(`route_schedules.vehicle_id = $${values.length}`);
+  }
+
+  const whereSql = where.length ? `where ${where.join(" and ")}` : "";
+
   const result = await pool.query(
     `
       select
         route_schedules.id as schedule_id,
         route_schedules.vehicle_id,
         vehicles.name as vehicle_name,
+        route_schedules.day_of_week,
         route_schedules.name,
         route_schedules.start_time,
         route_schedules.is_active,
@@ -323,15 +339,18 @@ async function findAdminSchedules() {
       inner join vehicles on vehicles.id = route_schedules.vehicle_id
       left join route_schedule_students
         on route_schedule_students.route_schedule_id = route_schedules.id
+      ${whereSql}
       group by route_schedules.id, vehicles.name
-      order by vehicles.name asc, route_schedules.start_time asc
+      order by vehicles.name asc, route_schedules.day_of_week asc, route_schedules.start_time asc
     `,
+    values,
   );
 
   return result.rows.map((row) => ({
     scheduleId: row.schedule_id,
     vehicleId: row.vehicle_id,
     vehicleName: row.vehicle_name,
+    dayOfWeek: row.day_of_week,
     name: row.name,
     startTime: formatTimeValue(row.start_time),
     assignedStudentCount: row.assigned_student_count,
@@ -339,7 +358,12 @@ async function findAdminSchedules() {
   }));
 }
 
-async function createAdminSchedule({ vehicleId, scheduleName, startTime }) {
+async function createAdminSchedule({
+  vehicleId,
+  dayOfWeek,
+  scheduleName,
+  startTime,
+}) {
   const randomSuffix = Math.random().toString(36).slice(2, 8);
   const scheduleId = `schedule_admin_${Date.now()}_${randomSuffix}`;
   const result = await pool.query(
@@ -347,17 +371,18 @@ async function createAdminSchedule({ vehicleId, scheduleName, startTime }) {
       insert into route_schedules (
         id,
         vehicle_id,
+        day_of_week,
         name,
         start_time,
         is_active,
         created_at,
         updated_at
       ) values (
-        $1, $2, $3, $4, true, now(), now()
+        $1, $2, $3, $4, $5, true, now(), now()
       )
       returning id
     `,
-    [scheduleId, vehicleId, scheduleName, startTime],
+    [scheduleId, vehicleId, dayOfWeek, scheduleName, startTime],
   );
 
   return findAdminScheduleById(result.rows[0].id);
@@ -366,6 +391,7 @@ async function createAdminSchedule({ vehicleId, scheduleName, startTime }) {
 async function updateAdminSchedule({
   scheduleId,
   vehicleId,
+  dayOfWeek,
   scheduleName,
   startTime,
   isActive,
@@ -375,14 +401,15 @@ async function updateAdminSchedule({
       update route_schedules
       set
         vehicle_id = $2,
-        name = $3,
-        start_time = $4,
-        is_active = $5,
+        day_of_week = $3,
+        name = $4,
+        start_time = $5,
+        is_active = $6,
         updated_at = now()
       where id = $1
       returning id
     `,
-    [scheduleId, vehicleId, scheduleName, startTime, isActive],
+    [scheduleId, vehicleId, dayOfWeek, scheduleName, startTime, isActive],
   );
 
   if (!result.rows[0]) {
@@ -419,6 +446,7 @@ async function findAdminScheduleById(scheduleId) {
         route_schedules.id as schedule_id,
         route_schedules.vehicle_id,
         vehicles.name as vehicle_name,
+        route_schedules.day_of_week,
         route_schedules.name,
         route_schedules.start_time,
         route_schedules.is_active,
@@ -444,6 +472,7 @@ async function findAdminScheduleById(scheduleId) {
     scheduleId: row.schedule_id,
     vehicleId: row.vehicle_id,
     vehicleName: row.vehicle_name,
+    dayOfWeek: row.day_of_week,
     name: row.name,
     startTime: formatTimeValue(row.start_time),
     assignedStudentCount: row.assigned_student_count,

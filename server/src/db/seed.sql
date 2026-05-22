@@ -29,12 +29,25 @@ on conflict (id) do update set
   is_active = excluded.is_active,
   updated_at = now();
 
-insert into route_schedules (id, vehicle_id, name, start_time, is_active) values
-  ('schedule_1330', 'vehicle_1', '등원', '13:30', true),
-  ('schedule_1440', 'vehicle_1', '등원', '14:40', true),
-  ('schedule_1550', 'vehicle_1', '등원', '15:50', true)
+insert into route_schedules (id, vehicle_id, day_of_week, name, start_time, is_active) values
+  ('schedule_monday_1330', 'vehicle_1', 'monday', '등원', '13:30', true),
+  ('schedule_monday_1440', 'vehicle_1', 'monday', '등원', '14:40', true),
+  ('schedule_monday_1550', 'vehicle_1', 'monday', '등원', '15:50', true),
+  ('schedule_tuesday_1330', 'vehicle_1', 'tuesday', '등원', '13:30', true),
+  ('schedule_tuesday_1440', 'vehicle_1', 'tuesday', '등원', '14:40', true),
+  ('schedule_tuesday_1550', 'vehicle_1', 'tuesday', '등원', '15:50', true),
+  ('schedule_wednesday_1330', 'vehicle_1', 'wednesday', '등원', '13:30', true),
+  ('schedule_wednesday_1440', 'vehicle_1', 'wednesday', '등원', '14:40', true),
+  ('schedule_wednesday_1550', 'vehicle_1', 'wednesday', '등원', '15:50', true),
+  ('schedule_thursday_1330', 'vehicle_1', 'thursday', '등원', '13:30', true),
+  ('schedule_thursday_1440', 'vehicle_1', 'thursday', '등원', '14:40', true),
+  ('schedule_thursday_1550', 'vehicle_1', 'thursday', '등원', '15:50', true),
+  ('schedule_friday_1330', 'vehicle_1', 'friday', '등원', '13:30', true),
+  ('schedule_friday_1440', 'vehicle_1', 'friday', '등원', '14:40', true),
+  ('schedule_friday_1550', 'vehicle_1', 'friday', '등원', '15:50', true)
 on conflict (id) do update set
   vehicle_id = excluded.vehicle_id,
+  day_of_week = excluded.day_of_week,
   name = excluded.name,
   start_time = excluded.start_time,
   is_active = excluded.is_active,
@@ -67,6 +80,54 @@ on conflict (id) do update set
   is_active = excluded.is_active,
   updated_at = now();
 
+with schedule_assignments(schedule_id, student_id, pickup_order) as (
+  values
+    ('schedule_monday_1330', 'student_1330_1', 1),
+    ('schedule_monday_1330', 'student_1330_2', 2),
+    ('schedule_monday_1330', 'student_1330_3', 3),
+    ('schedule_monday_1440', 'student_1440_1', 1),
+    ('schedule_monday_1440', 'student_1440_2', 2),
+    ('schedule_monday_1440', 'student_1440_3', 3),
+    ('schedule_monday_1550', 'student_1550_1', 1),
+    ('schedule_monday_1550', 'student_1550_2', 2),
+    ('schedule_monday_1550', 'student_1550_3', 3),
+    ('schedule_tuesday_1330', 'student_1330_1', 1),
+    ('schedule_tuesday_1330', 'student_1330_2', 2),
+    ('schedule_tuesday_1330', 'student_1330_3', 3),
+    ('schedule_tuesday_1440', 'student_1440_1', 1),
+    ('schedule_tuesday_1440', 'student_1440_2', 2),
+    ('schedule_tuesday_1440', 'student_1440_3', 3),
+    ('schedule_tuesday_1550', 'student_1550_1', 1),
+    ('schedule_tuesday_1550', 'student_1550_2', 2),
+    ('schedule_tuesday_1550', 'student_1550_3', 3),
+    ('schedule_wednesday_1330', 'student_1330_1', 1),
+    ('schedule_wednesday_1330', 'student_1330_2', 2),
+    ('schedule_wednesday_1330', 'student_1330_3', 3),
+    ('schedule_wednesday_1440', 'student_1440_1', 1),
+    ('schedule_wednesday_1440', 'student_1440_2', 2),
+    ('schedule_wednesday_1440', 'student_1440_3', 3),
+    ('schedule_wednesday_1550', 'student_1550_1', 1),
+    ('schedule_wednesday_1550', 'student_1550_2', 2),
+    ('schedule_wednesday_1550', 'student_1550_3', 3),
+    ('schedule_thursday_1330', 'student_1330_1', 1),
+    ('schedule_thursday_1330', 'student_1330_2', 2),
+    ('schedule_thursday_1330', 'student_1330_3', 3),
+    ('schedule_thursday_1440', 'student_1440_1', 1),
+    ('schedule_thursday_1440', 'student_1440_2', 2),
+    ('schedule_thursday_1440', 'student_1440_3', 3),
+    ('schedule_thursday_1550', 'student_1550_1', 1),
+    ('schedule_thursday_1550', 'student_1550_2', 2),
+    ('schedule_thursday_1550', 'student_1550_3', 3),
+    ('schedule_friday_1330', 'student_1330_1', 1),
+    ('schedule_friday_1330', 'student_1330_2', 2),
+    ('schedule_friday_1330', 'student_1330_3', 3),
+    ('schedule_friday_1440', 'student_1440_1', 1),
+    ('schedule_friday_1440', 'student_1440_2', 2),
+    ('schedule_friday_1440', 'student_1440_3', 3),
+    ('schedule_friday_1550', 'student_1550_1', 1),
+    ('schedule_friday_1550', 'student_1550_2', 2),
+    ('schedule_friday_1550', 'student_1550_3', 3)
+)
 insert into route_schedule_students (
   id,
   route_schedule_id,
@@ -74,16 +135,15 @@ insert into route_schedule_students (
   pickup_order,
   pickup_place_override,
   memo
-) values
-  ('rss_1330_1', 'schedule_1330', 'student_1330_1', 1, null, null),
-  ('rss_1330_2', 'schedule_1330', 'student_1330_2', 2, null, null),
-  ('rss_1330_3', 'schedule_1330', 'student_1330_3', 3, null, null),
-  ('rss_1440_1', 'schedule_1440', 'student_1440_1', 1, null, null),
-  ('rss_1440_2', 'schedule_1440', 'student_1440_2', 2, null, null),
-  ('rss_1440_3', 'schedule_1440', 'student_1440_3', 3, null, null),
-  ('rss_1550_1', 'schedule_1550', 'student_1550_1', 1, null, null),
-  ('rss_1550_2', 'schedule_1550', 'student_1550_2', 2, null, null),
-  ('rss_1550_3', 'schedule_1550', 'student_1550_3', 3, null, null)
+)
+select
+  'rss_' || schedule_id || '_' || student_id,
+  schedule_id,
+  student_id,
+  pickup_order,
+  null,
+  null
+from schedule_assignments
 on conflict (route_schedule_id, student_id) do update set
   pickup_order = excluded.pickup_order,
   pickup_place_override = excluded.pickup_place_override,

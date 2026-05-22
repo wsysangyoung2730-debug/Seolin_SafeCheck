@@ -45,6 +45,17 @@ create table students (
 create table route_schedules (
   id text primary key,
   vehicle_id text not null references vehicles(id),
+  day_of_week text not null check (
+    day_of_week in (
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday'
+    )
+  ),
   name text not null,
   start_time time not null,
   is_active boolean not null default true,
@@ -101,7 +112,7 @@ create table settings (
 );
 
 create index idx_vehicles_driver_user_id on vehicles(driver_user_id);
-create index idx_route_schedules_vehicle_id on route_schedules(vehicle_id);
+create index idx_route_schedules_vehicle_day on route_schedules(vehicle_id, day_of_week);
 create index idx_route_schedule_students_schedule_id on route_schedule_students(route_schedule_id);
 create index idx_route_schedule_students_student_id on route_schedule_students(student_id);
 create index idx_attendance_records_date_schedule on attendance_records(attendance_date, route_schedule_id);

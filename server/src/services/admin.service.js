@@ -25,6 +25,15 @@ const VALID_ATTENDANCE_STATUSES = new Set([
   "boarded",
   "not_boarded",
 ]);
+const VALID_DAYS_OF_WEEK = new Set([
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+]);
 
 function normalizeStudentInput({ studentName, pickupPlace, isActive }) {
   return {
@@ -63,6 +72,7 @@ function validateVehicleInput(vehicle) {
 
 function normalizeScheduleInput({
   vehicleId,
+  dayOfWeek,
   scheduleName,
   name,
   startTime,
@@ -70,6 +80,7 @@ function normalizeScheduleInput({
 }) {
   return {
     vehicleId: typeof vehicleId === "string" ? vehicleId.trim() : "",
+    dayOfWeek: typeof dayOfWeek === "string" ? dayOfWeek.trim() : "",
     scheduleName:
       typeof scheduleName === "string"
         ? scheduleName.trim()
@@ -86,6 +97,10 @@ function isValidStartTime(startTime) {
 }
 
 async function validateScheduleInput(schedule) {
+  if (!VALID_DAYS_OF_WEEK.has(schedule.dayOfWeek)) {
+    return "요일을 선택해주세요.";
+  }
+
   if (!schedule.vehicleId) {
     return "차량을 선택해주세요.";
   }
@@ -205,9 +220,19 @@ async function deactivateVehicle(vehicleId) {
   };
 }
 
-async function getAdminSchedules() {
+function normalizeScheduleFilters(filters = {}) {
   return {
-    schedules: await findAdminSchedules(),
+    dayOfWeek:
+      typeof filters.dayOfWeek === "string" && VALID_DAYS_OF_WEEK.has(filters.dayOfWeek)
+        ? filters.dayOfWeek
+        : "",
+    vehicleId: typeof filters.vehicleId === "string" ? filters.vehicleId.trim() : "",
+  };
+}
+
+async function getAdminSchedules(filters = {}) {
+  return {
+    schedules: await findAdminSchedules(normalizeScheduleFilters(filters)),
   };
 }
 
