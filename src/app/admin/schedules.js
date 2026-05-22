@@ -113,7 +113,7 @@ function renderWeekdayButtons() {
     button.type = "button";
     button.className = "selector-button";
     button.textContent = weekday.label;
-    button.ariaPressed = String(weekday.value === selectedDayOfWeek);
+    button.setAttribute("aria-pressed", String(weekday.value === selectedDayOfWeek));
     button.addEventListener("click", async () => {
       selectedDayOfWeek = weekday.value;
       renderWeekdayButtons();
@@ -141,7 +141,7 @@ function renderVehicleButtons() {
     button.type = "button";
     button.className = "selector-button";
     button.textContent = vehicle.vehicleName;
-    button.ariaPressed = String(vehicle.vehicleId === selectedVehicleId);
+    button.setAttribute("aria-pressed", String(vehicle.vehicleId === selectedVehicleId));
     button.addEventListener("click", async () => {
       selectedVehicleId = vehicle.vehicleId;
       renderVehicleButtons();
