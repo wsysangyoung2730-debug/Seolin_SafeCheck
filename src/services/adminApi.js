@@ -136,3 +136,26 @@ export async function updateAdminScheduleStudents({ scheduleId, studentIds }) {
     ADMIN_AUTH_OPTIONS,
   );
 }
+
+export async function getAdminAttendanceRecords({ date, vehicleId, scheduleId }) {
+  const query = new URLSearchParams();
+
+  if (date) {
+    query.set("date", date);
+  }
+
+  if (vehicleId) {
+    query.set("vehicleId", vehicleId);
+  }
+
+  if (scheduleId) {
+    query.set("scheduleId", scheduleId);
+  }
+
+  const queryString = query.toString();
+
+  return apiGet(
+    `/api/admin/attendance-records${queryString ? `?${queryString}` : ""}`,
+    ADMIN_AUTH_OPTIONS,
+  );
+}

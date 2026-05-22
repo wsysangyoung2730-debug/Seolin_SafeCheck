@@ -192,14 +192,15 @@ seolin-safecheck/
 - 관리자 인증/권한 기반과 초기 read-only admin API 준비
 - 관리자 로그인, 기본 레이아웃, 원생 관리 MVP 정적 화면 구현
 - 관리자 차량 관리, 시간표 관리, 시간표별 원생 배정 MVP 구현
+- 관리자 출결 기록 조회 화면 구현
 
 ## 10. 추천 다음 단계
 
 1. 로컬 또는 Docker PostgreSQL 환경에서 schema/seed 적용 검증
 2. 개발/운영 API base URL 설정 방식 확정
 3. 운영용 인증 방식 결정
-4. 관리자 출결 기록 조회 화면 구현
-5. 관리자 Excel/SMS 준비 범위 확정
+4. 관리자 Excel/SMS 준비 범위 확정
+5. 운영용 인증 방식 보강
 6. 개발 환경에서는 SMS mock provider를 먼저 사용
 
 로컬 관리자 화면:
@@ -208,4 +209,5 @@ seolin-safecheck/
 admin/login/index.html
 admin/vehicles/index.html
 admin/schedules/index.html
+admin/attendance/index.html
 ```

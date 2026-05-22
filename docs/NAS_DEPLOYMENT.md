@@ -18,7 +18,7 @@
 - 안전한 예시 환경변수 파일
 - Health API
 - 기사님 로그인/시간대/원생/출결 저장 API
-- 관리자 개발용 로그인과 원생/차량/시간표 관리 MVP API 기반
+- 관리자 개발용 로그인과 원생/차량/시간표/출결 기록 조회 MVP API 기반
 
 현재 포함하지 않는 범위:
 
@@ -26,7 +26,7 @@
 - SMS provider 연동
 - Excel import/export
 - 관리자 대시보드
-- 출결 기록, Excel, SMS 관리자 UI/API
+- Excel, SMS 관리자 UI/API
 - 실제 NAS 배포 실행
 
 ## 3. Synology NAS 가정

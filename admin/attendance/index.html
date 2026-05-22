@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>출결 기록 | Seolin SafeCheck</title>
+    <link rel="stylesheet" href="../../src/styles/admin.css">
+  </head>
+  <body>
+    <div class="admin-shell">
+      <aside class="admin-sidebar" aria-label="관리자 메뉴">
+        <div class="sidebar-brand">
+          <img src="../../assets/images/seolin-logo-box.png" alt="서린태권도 로고">
+          <div>
+            <strong>Seolin SafeCheck</strong>
+            <span>관리자</span>
+          </div>
+        </div>
+        <nav class="admin-nav">
+          <a href="../home/">대시보드</a>
+          <a href="../students/">원생 관리</a>
+          <a href="../vehicles/">차량 관리</a>
+          <a href="../schedules/">시간표 관리</a>
+          <a href="./" aria-current="page">출결 기록</a>
+          <a href="#" aria-disabled="true" data-planned-nav>엑셀 관리 <span class="planned-label">준비 중</span></a>
+          <a href="#" aria-disabled="true" data-planned-nav>SMS 설정 <span class="planned-label">준비 중</span></a>
+        </nav>
+      </aside>
+
+      <main class="admin-main">
+        <header class="admin-header">
+          <div class="admin-user">
+            <strong id="admin-display-name">관리자</strong>
+            <span id="admin-account-id">계정 확인 중</span>
+          </div>
+          <button id="logout-button" class="secondary-button" type="button">로그아웃</button>
+        </header>
+
+        <section class="admin-content">
+          <div class="page-title">
+            <div>
+              <p class="eyebrow">출결 기록</p>
+              <h1>등원 차량 출결 기록</h1>
+              <p>저장된 탑승 출결 기록을 날짜, 차량, 시간표 기준으로 조회합니다.</p>
+            </div>
+          </div>
+
+          <section class="panel filter-panel" aria-label="출결 기록 필터">
+            <label class="field">
+              <span>날짜</span>
+              <input id="attendance-date" type="date">
+            </label>
+            <label class="field">
+              <span>차량</span>
+              <select id="vehicle-filter"></select>
+            </label>
+            <label class="field">
+              <span>시간표</span>
+              <select id="schedule-filter"></select>
+            </label>
+            <button id="load-attendance-button" class="primary-button" type="button">조회</button>
+          </section>
+
+          <div id="attendance-summary" class="metric-grid metric-grid--compact" aria-live="polite"></div>
+
+          <div class="toolbar">
+            <p id="attendance-message" class="message" role="status" aria-live="polite"></p>
+          </div>
+
+          <section class="panel table-panel" aria-label="출결 기록 목록">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">시간대</th>
+                  <th scope="col">차량</th>
+                  <th scope="col">원생명</th>
+                  <th scope="col">탑승장소</th>
+                  <th scope="col">상태</th>
+                  <th scope="col">저장시각</th>
+                </tr>
+              </thead>
+              <tbody id="attendance-table-body"></tbody>
+            </table>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="../../src/app/admin/attendance.js"></script>
+  </body>
+</html>

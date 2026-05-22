@@ -302,6 +302,10 @@ a {
   gap: 14px;
 }
 
+.metric-grid--compact {
+  margin-bottom: 14px;
+}
+
 .metric-card {
   display: grid;
   gap: 8px;
@@ -327,6 +331,15 @@ a {
   justify-content: space-between;
   gap: 14px;
   margin-bottom: 14px;
+}
+
+.filter-panel {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.8fr) minmax(180px, 1fr) minmax(220px, 1.4fr) auto;
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 16px;
+  padding: 18px;
 }
 
 .search-input {
@@ -499,8 +512,10 @@ a {
   }
 
   .page-title,
-  .toolbar {
+  .toolbar,
+  .filter-panel {
     align-items: stretch;
+    grid-template-columns: 1fr;
     flex-direction: column;
   }
 }

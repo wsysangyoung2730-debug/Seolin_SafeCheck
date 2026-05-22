@@ -359,10 +359,34 @@ async function getAdminAttendanceRecords(filters) {
     };
   }
 
+  const attendanceRecords = await findAdminAttendanceRecords(filters);
+  const summary = attendanceRecords.reduce(
+    (nextSummary, record) => {
+      nextSummary.total += 1;
+
+      if (record.status === "boarded") {
+        nextSummary.boarded += 1;
+      } else if (record.status === "not_boarded") {
+        nextSummary.notBoarded += 1;
+      } else {
+        nextSummary.unchecked += 1;
+      }
+
+      return nextSummary;
+    },
+    {
+      total: 0,
+      boarded: 0,
+      notBoarded: 0,
+      unchecked: 0,
+    },
+  );
+
   return {
     success: true,
     data: {
-      attendanceRecords: await findAdminAttendanceRecords(filters),
+      attendanceRecords,
+      summary,
     },
   };
 }

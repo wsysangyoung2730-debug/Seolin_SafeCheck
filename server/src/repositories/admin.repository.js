@@ -597,8 +597,14 @@ async function findAdminAttendanceRecords(filters = {}) {
       inner join route_schedules
         on route_schedules.id = attendance_records.route_schedule_id
       inner join students on students.id = attendance_records.student_id
+      left join route_schedule_students
+        on route_schedule_students.route_schedule_id = attendance_records.route_schedule_id
+        and route_schedule_students.student_id = attendance_records.student_id
       ${whereSql}
-      order by attendance_records.attendance_date desc,
+      order by vehicles.name asc,
+        route_schedules.start_time asc,
+        route_schedule_students.pickup_order nulls last,
+        students.name asc,
         attendance_records.updated_at desc
       limit 100
     `,
