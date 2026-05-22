@@ -6,7 +6,13 @@ const { findStudentsByScheduleId } = require("../repositories/student.repository
 const { findVehicleByDriverUserId } = require("../repositories/vehicle.repository");
 
 function getTodayDateValue() {
-  return new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+  return today.toISOString().slice(0, 10);
+}
+
+function normalizeDateValue(date) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(date || "") ? date : getTodayDateValue();
 }
 
 async function getTodaySchedules(driverUserId) {
@@ -20,7 +26,7 @@ async function getTodaySchedules(driverUserId) {
   };
 }
 
-async function getScheduleStudents({ driverUserId, scheduleId }) {
+async function getScheduleStudents({ driverUserId, scheduleId, date }) {
   const vehicle = await findVehicleByDriverUserId(driverUserId);
 
   if (!vehicle) {
@@ -36,9 +42,12 @@ async function getScheduleStudents({ driverUserId, scheduleId }) {
     return null;
   }
 
+  const targetDate = normalizeDateValue(date);
+
   return {
+    date: targetDate,
     schedule,
-    students: await findStudentsByScheduleId(scheduleId),
+    students: await findStudentsByScheduleId(scheduleId, targetDate),
   };
 }
 

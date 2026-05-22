@@ -4,6 +4,16 @@ export async function getTodayDriverSchedules() {
   return apiGet("/api/driver/schedules/today");
 }
 
-export async function getDriverScheduleStudents(scheduleId) {
-  return apiGet(`/api/driver/schedules/${encodeURIComponent(scheduleId)}/students`);
+export async function getDriverScheduleStudents(scheduleId, date) {
+  const params = new URLSearchParams();
+
+  if (date) {
+    params.set("date", date);
+  }
+
+  const queryString = params.toString();
+
+  return apiGet(
+    `/api/driver/schedules/${encodeURIComponent(scheduleId)}/students${queryString ? `?${queryString}` : ""}`,
+  );
 }

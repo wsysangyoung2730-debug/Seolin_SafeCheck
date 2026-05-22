@@ -380,6 +380,11 @@ a {
   border-bottom: 0;
 }
 
+.data-table tr.is-inactive td {
+  background: #FAFAFA;
+  color: var(--text-secondary);
+}
+
 .mono-cell {
   color: var(--text-secondary);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;

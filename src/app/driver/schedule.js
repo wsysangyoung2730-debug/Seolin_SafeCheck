@@ -46,7 +46,9 @@ let attendanceRecords = [];
 let isSaving = false;
 
 function getTodayDateValue() {
-  return new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+  return today.toISOString().slice(0, 10);
 }
 
 function showMessage(text, type = "info") {
@@ -274,7 +276,7 @@ async function initializeSchedule() {
   vehicleName.textContent = `${session.user.accountId} 계정으로 로그인 중`;
 
   try {
-    const data = await getDriverScheduleStudents(scheduleId);
+    const data = await getDriverScheduleStudents(scheduleId, getTodayDateValue());
     selectedSchedule = data.schedule;
     selectedVehicle = {
       id: session.user.vehicleId,

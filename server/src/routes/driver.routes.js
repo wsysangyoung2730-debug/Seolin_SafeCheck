@@ -47,6 +47,7 @@ router.get("/schedules/:scheduleId/students", asyncHandler(async (req, res) => {
   const result = await getScheduleStudents({
     driverUserId: req.driverUser.id,
     scheduleId: req.params.scheduleId,
+    date: req.query.date,
   });
 
   if (!result) {

@@ -53,7 +53,7 @@ function getContactLabel(status) {
 function renderStatusBadge(student) {
   const badge = document.createElement("span");
   badge.className = student.isActive ? "badge badge--success" : "badge";
-  badge.textContent = student.isActive ? "활성" : "비활성";
+  badge.textContent = student.isActive ? "이용 중" : "미이용";
   return badge;
 }
 
@@ -64,7 +64,7 @@ function renderStudents() {
   if (visibleStudents.length === 0) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
-    cell.colSpan = 6;
+    cell.colSpan = 5;
     cell.className = "table-empty";
     cell.textContent = students.length === 0
       ? "등록된 원생이 없습니다."
@@ -76,6 +76,7 @@ function renderStudents() {
 
   visibleStudents.forEach((student) => {
     const row = document.createElement("tr");
+    row.className = student.isActive ? "" : "is-inactive";
 
     const nameCell = document.createElement("td");
     nameCell.textContent = student.studentName;
@@ -88,10 +89,6 @@ function renderStudents() {
 
     const statusCell = document.createElement("td");
     statusCell.append(renderStatusBadge(student));
-
-    const idCell = document.createElement("td");
-    idCell.textContent = student.studentId;
-    idCell.className = "mono-cell";
 
     const actionCell = document.createElement("td");
     actionCell.className = "table-actions";
@@ -107,14 +104,14 @@ function renderStudents() {
     const deactivateButton = document.createElement("button");
     deactivateButton.type = "button";
     deactivateButton.className = "danger-button";
-    deactivateButton.textContent = "비활성화";
+    deactivateButton.textContent = "미이용 처리";
     deactivateButton.disabled = !student.isActive;
     deactivateButton.addEventListener("click", () => {
       handleDeactivate(student);
     });
 
     actionCell.append(editButton, deactivateButton);
-    row.append(nameCell, pickupCell, contactCell, statusCell, idCell, actionCell);
+    row.append(nameCell, pickupCell, contactCell, statusCell, actionCell);
     studentTableBody.append(row);
   });
 }
@@ -230,7 +227,7 @@ async function handleDeactivate(student) {
   }
 
   pendingDeactivateStudent = student;
-  deactivateMessage.textContent = `${student.studentName} 원생을 비활성화할까요?`;
+  deactivateMessage.textContent = `${student.studentName} 원생을 출결 대상에서 제외하고 미이용 상태로 변경할까요? 원생 정보는 삭제되지 않습니다.`;
   deactivateDialog.showModal();
 }
 
@@ -241,11 +238,11 @@ async function confirmDeactivate() {
 
   const student = pendingDeactivateStudent;
   confirmDeactivateButton.disabled = true;
-  setMessage("원생을 비활성화하는 중입니다.", "info");
+  setMessage("원생을 미이용 처리하는 중입니다.", "info");
 
   try {
     await deactivateAdminStudent(student.studentId);
-    setMessage("원생을 비활성화했습니다.", "success");
+    setMessage("원생을 미이용 처리했습니다.", "success");
     await loadStudents();
   } catch (error) {
     setMessage(
