@@ -112,6 +112,14 @@
       <form id="assignment-form" class="form-stack" method="dialog" novalidate>
         <h2 id="assignment-dialog-title">원생 배정</h2>
         <p class="helper-note">배정할 원생을 선택해주세요.</p>
+        <input
+          id="assignment-search"
+          class="search-input assignment-search"
+          type="search"
+          placeholder="원생 이름 또는 탑승장소 검색"
+          aria-label="원생 이름 또는 탑승장소 검색"
+        >
+        <p id="assignment-count" class="helper-note"></p>
         <div id="assignment-list" class="assignment-list"></div>
         <div class="dialog-actions">
           <button id="cancel-assignment-button" class="secondary-button" type="button">취소</button>

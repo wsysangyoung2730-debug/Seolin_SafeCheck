@@ -486,6 +486,10 @@ a {
   background: #FFFFFF;
 }
 
+.assignment-search {
+  width: 100%;
+}
+
 .assignment-item {
   display: grid;
   grid-template-columns: auto 1fr;

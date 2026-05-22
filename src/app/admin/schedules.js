@@ -29,6 +29,8 @@ const saveButton = document.querySelector("#save-schedule-button");
 const assignmentDialog = document.querySelector("#assignment-dialog");
 const assignmentForm = document.querySelector("#assignment-form");
 const assignmentTitle = document.querySelector("#assignment-dialog-title");
+const assignmentSearch = document.querySelector("#assignment-search");
+const assignmentCount = document.querySelector("#assignment-count");
 const assignmentList = document.querySelector("#assignment-list");
 const cancelAssignmentButton = document.querySelector("#cancel-assignment-button");
 const saveAssignmentButton = document.querySelector("#save-assignment-button");
@@ -42,6 +44,8 @@ let vehicles = [];
 let selectedDayOfWeek = getTodayDayOfWeek();
 let selectedVehicleId = "";
 let selectedAssignmentSchedule = null;
+let assignmentStudents = [];
+let assignmentSelectedIds = new Set();
 let pendingDeactivateSchedule = null;
 let isSaving = false;
 
@@ -387,43 +391,28 @@ async function handleSave(event) {
 
 async function openAssignmentDialog(schedule) {
   selectedAssignmentSchedule = schedule;
+  assignmentStudents = [];
+  assignmentSelectedIds = new Set();
   assignmentTitle.textContent = `${schedule.vehicleName} ${schedule.startTime} 원생 배정`;
+  assignmentSearch.value = "";
+  assignmentCount.textContent = "";
   assignmentList.replaceChildren();
   assignmentDialog.showModal();
 
   try {
     const data = await getAdminScheduleStudents(schedule.scheduleId);
-    const students = data.students || [];
-
-    if (students.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "table-empty";
-      empty.textContent = "활성 원생이 없습니다.";
-      assignmentList.append(empty);
-      return;
-    }
-
-    students.forEach((student) => {
-      const label = document.createElement("label");
-      label.className = "assignment-item";
-
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.value = student.studentId;
-      checkbox.checked = student.isAssigned;
-
-      const detail = document.createElement("span");
-      const name = document.createElement("strong");
-      name.textContent = student.studentName;
-      const place = document.createElement("span");
-      place.textContent = student.pickupPlace;
-
-      detail.append(name, place);
-      label.append(checkbox, detail);
-      assignmentList.append(label);
-    });
+    assignmentStudents = data.students || [];
+    assignmentSelectedIds = new Set(
+      assignmentStudents
+        .filter((student) => student.isAssigned)
+        .map((student) => student.studentId),
+    );
+    renderAssignmentStudents();
   } catch (error) {
+    assignmentStudents = [];
+    assignmentSelectedIds = new Set();
     assignmentList.replaceChildren();
+    assignmentCount.textContent = "";
     const empty = document.createElement("div");
     empty.className = "table-empty";
     empty.textContent = error instanceof ApiClientError
@@ -433,6 +422,68 @@ async function openAssignmentDialog(schedule) {
   }
 }
 
+function getFilteredAssignmentStudents() {
+  const keyword = assignmentSearch.value.trim().toLowerCase();
+
+  if (!keyword) {
+    return assignmentStudents;
+  }
+
+  return assignmentStudents.filter((student) => {
+    const name = student.studentName.toLowerCase();
+    const pickupPlace = (student.pickupPlace || "").toLowerCase();
+
+    return name.includes(keyword) || pickupPlace.includes(keyword);
+  });
+}
+
+function renderAssignmentStudents() {
+  const filteredStudents = getFilteredAssignmentStudents();
+  assignmentList.replaceChildren();
+  assignmentCount.textContent =
+    `선택된 원생 ${assignmentSelectedIds.size}명 · 검색 결과 ${filteredStudents.length}명`;
+
+  if (assignmentStudents.length === 0 || filteredStudents.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "table-empty";
+    empty.textContent = assignmentStudents.length === 0
+      ? "활성 원생이 없습니다."
+      : "검색 결과가 없습니다.";
+    assignmentList.append(empty);
+    return;
+  }
+
+  filteredStudents.forEach((student) => {
+    const label = document.createElement("label");
+    label.className = "assignment-item";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = student.studentId;
+    checkbox.checked = assignmentSelectedIds.has(student.studentId);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) {
+        assignmentSelectedIds.add(student.studentId);
+      } else {
+        assignmentSelectedIds.delete(student.studentId);
+      }
+
+      assignmentCount.textContent =
+        `선택된 원생 ${assignmentSelectedIds.size}명 · 검색 결과 ${filteredStudents.length}명`;
+    });
+
+    const detail = document.createElement("span");
+    const name = document.createElement("strong");
+    name.textContent = student.studentName;
+    const place = document.createElement("span");
+    place.textContent = student.pickupPlace;
+
+    detail.append(name, place);
+    label.append(checkbox, detail);
+    assignmentList.append(label);
+  });
+}
+
 async function handleAssignmentSave(event) {
   event.preventDefault();
 
@@ -440,9 +491,7 @@ async function handleAssignmentSave(event) {
     return;
   }
 
-  const studentIds = Array.from(
-    assignmentList.querySelectorAll("input[type='checkbox']:checked"),
-  ).map((checkbox) => checkbox.value);
+  const studentIds = Array.from(assignmentSelectedIds);
 
   saveAssignmentButton.disabled = true;
   setMessage("원생 배정을 저장하는 중입니다.", "info");
@@ -454,6 +503,8 @@ async function handleAssignmentSave(event) {
     });
     assignmentDialog.close();
     selectedAssignmentSchedule = null;
+    assignmentStudents = [];
+    assignmentSelectedIds = new Set();
     setMessage("원생 배정을 저장했습니다.", "success");
     await loadSchedules();
   } catch (error) {
@@ -514,8 +565,11 @@ async function initializeSchedules() {
   assignmentForm.addEventListener("submit", handleAssignmentSave);
   cancelAssignmentButton.addEventListener("click", () => {
     selectedAssignmentSchedule = null;
+    assignmentStudents = [];
+    assignmentSelectedIds = new Set();
     assignmentDialog.close();
   });
+  assignmentSearch.addEventListener("input", renderAssignmentStudents);
   cancelDeactivateButton.addEventListener("click", () => {
     pendingDeactivateSchedule = null;
     deactivateDialog.close();
