@@ -1,13 +1,15 @@
 .DS_Store
+.git
+.vscode
 .env
 .env.*
 !.env.example
 !.env.production.example
+node_modules
+server/node_modules
 server/.env
 server/.env.*
 !server/.env.example
-node_modules/
-server/node_modules/
 *.dump
 *.backup
 *.bak

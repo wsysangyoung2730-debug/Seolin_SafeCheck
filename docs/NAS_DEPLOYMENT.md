@@ -1,252 +1,243 @@
 # Seolin SafeCheck NAS Deployment Guide
 
-## 1. 문서 목적
+## 1. 목적
 
-이 문서는 Seolin SafeCheck를 Synology NAS 환경에 배포하기 위한 준비 수준의 가이드입니다. 현재 단계에서는 PostgreSQL 기반 백엔드 API 서버와 Docker 실행 기반을 준비하며, 실제 NAS 배포 작업은 수행하지 않습니다.
+이 문서는 Seolin SafeCheck를 Synology NAS의 Container Manager 또는 Docker Compose로 실행하기 위한 배포 준비 가이드입니다. 실제 NAS 배포, 도메인 등록, 인증서 발급, 운영 계정 생성은 이 작업에 포함하지 않습니다.
 
-현재 로컬 개발용 DB 스키마와 seed 파일은 포함되어 있습니다. 운영용 DB 계정, 백업, 보안 설정, SMS 제공업체 연동은 이후 작업에서 확정합니다.
+목표 운영 구조:
 
-## 2. 현재 배포 범위
+- PostgreSQL: NAS Docker volume에 데이터 저장
+- Backend: Node.js Express API 서버
+- Frontend: nginx가 정적 파일을 서빙하고 `/api`를 backend로 프록시
+- 사용자는 하나의 도메인으로 접근
+  - `https://YOUR_DOMAIN/driver/login/index.html`
+  - `https://YOUR_DOMAIN/admin/schedules/index.html`
+  - `https://YOUR_DOMAIN/api/health`
 
-현재 준비된 범위:
+## 2. 포함된 배포 파일
 
-- Node.js + Express 기반 API 서버
-- PostgreSQL 컨테이너 구성
-- 개발용 schema/seed SQL
-- Dockerfile
-- app-only `docker-compose.yml`
-- 안전한 예시 환경변수 파일
-- Health API
-- 기사님 로그인/시간대/원생/출결 저장 API
-- 관리자 개발용 로그인과 원생/차량/시간표/출결 기록 조회 MVP API 기반
+```txt
+docker-compose.prod.yml
+Dockerfile.frontend
+nginx/default.conf
+.env.production.example
+server/Dockerfile
+server/.dockerignore
+```
 
-현재 포함하지 않는 범위:
+`docker-compose.yml`은 로컬 개발용입니다. NAS 운영 준비에는 `docker-compose.prod.yml`을 사용합니다.
 
-- ORM
-- SMS provider 연동
-- Excel import/export
-- 관리자 대시보드
-- Excel, SMS 관리자 UI/API
-- 실제 NAS 배포 실행
+## 3. NAS 사전 준비
 
-## 3. Synology NAS 가정
+- Synology DSM
+- Container Manager 설치
+- 프로젝트를 둘 공유 폴더
+- Docker volume을 저장할 충분한 공간
+- 도메인 또는 DDNS
+- Reverse Proxy 및 HTTPS 인증서 적용 가능 여부
+- 운영용 PostgreSQL 계정/비밀번호
+- 운영용 SOLAPI 계정과 발신번호
 
-운영 환경은 다음을 전제로 합니다.
+## 4. NAS 폴더 구조 예시
 
-- Synology DSM 사용
-- Container Manager 또는 Docker 사용 가능
-- NAS가 내부망에서 접근 가능
-- 필요 시 외부 접속용 도메인 또는 DDNS 설정 가능
-- Reverse Proxy와 HTTPS 인증서 설정 가능
+```txt
+/volume1/docker/seolin-safecheck/
+  docker-compose.prod.yml
+  .env
+  Dockerfile.frontend
+  nginx/
+  server/
+  driver/
+  admin/
+  src/
+  assets/
+  index.html
+```
 
-## 4. DSM / Container Manager 확인 항목
+`.env`는 NAS에서 직접 만들고 Git에 커밋하지 않습니다.
 
-배포 전 확인합니다.
+## 5. 운영 환경변수
 
-- DSM 버전
-- Container Manager 설치 여부
-- Docker Compose 사용 가능 여부
-- 외부 포트 개방 정책
-- NAS 방화벽 정책
-- 저장소 여유 공간
-- 백업 대상 공유 폴더
-- HTTPS 인증서 발급 또는 적용 가능 여부
+`.env.production.example`을 참고해 NAS 프로젝트 폴더에 `.env`를 생성합니다.
 
-## 5. 프로젝트 업로드 전략
-
-권장 방식:
-
-1. GitHub 저장소를 NAS에 clone합니다.
-2. NAS의 프로젝트 경로를 정합니다.
-3. `server/.env.example`을 참고해 `server/.env`를 NAS에서 직접 생성합니다.
-4. `docker-compose.yml`로 backend와 db 컨테이너를 실행합니다.
+```txt
+NODE_ENV=production
+PORT=3000
+FRONTEND_PORT=8080
+CORS_ORIGIN=https://YOUR_DOMAIN
+POSTGRES_DB=CHANGE_ME_DB
+POSTGRES_USER=CHANGE_ME_USER
+POSTGRES_PASSWORD=CHANGE_ME_PASSWORD
+DATABASE_URL=postgres://CHANGE_ME_USER:CHANGE_ME_PASSWORD@db:5432/CHANGE_ME_DB
+SMS_PROVIDER=mock
+SMS_REAL_SEND_ENABLED=false
+SMS_TEST_MODE=true
+SMS_TEST_TO=
+SOLAPI_API_KEY=
+SOLAPI_API_SECRET=
+SOLAPI_SENDER_NUMBER=
+```
 
 주의:
 
-- `.env` 파일은 Git에 커밋하지 않습니다.
-- 실제 SMS API Key나 DB 비밀번호는 저장소에 올리지 않습니다.
-- 운영용 설정값은 NAS 내부에서만 관리합니다.
+- 실제 `.env`는 커밋하지 않습니다.
+- 실제 API Key, API Secret, 전화번호, NAS 주소를 문서나 Git에 남기지 않습니다.
+- 운영 전까지 `SMS_PROVIDER=mock`, `SMS_REAL_SEND_ENABLED=false`를 권장합니다.
+- SOLAPI 테스트는 `SMS_TEST_MODE=true`와 `SMS_TEST_TO`로 1건씩만 확인합니다.
 
-## 6. 환경변수 설정
+## 6. Container Manager 실행 개념
 
-예시 파일:
+Synology Container Manager의 Project 기능에서 `docker-compose.prod.yml`을 사용할 수 있습니다.
 
-```txt
-server/.env.example
-```
-
-NAS에서 생성할 실제 파일:
-
-```txt
-server/.env
-```
-
-현재 예시 값:
-
-```txt
-PORT=3000
-NODE_ENV=development
-CORS_ORIGIN=http://localhost:5500
-DATABASE_URL=postgres://seolin_user:seolin_password@localhost:5432/seolin_safecheck
-POSTGRES_DB=seolin_safecheck
-POSTGRES_USER=seolin_user
-POSTGRES_PASSWORD=seolin_password
-```
-
-운영 시에는 `CORS_ORIGIN`, `DATABASE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`를 실제 NAS 운영 값으로 변경합니다. 예시 비밀번호는 개발용이며 운영에 사용하지 않습니다.
-
-## 7. Docker / Container Manager 실행 개념
-
-개발 또는 NAS 환경에서 예상 실행 흐름:
+CLI 사용 시 예:
 
 ```sh
-docker compose up -d --build
+docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 ```
 
 상태 확인:
 
 ```sh
-docker compose logs backend
-docker compose logs db
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs backend
+docker compose -f docker-compose.prod.yml logs frontend
+docker compose -f docker-compose.prod.yml logs db
 ```
 
-Health check:
+## 7. 서비스 구조
+
+`docker-compose.prod.yml` 서비스:
+
+- `db`: PostgreSQL 16, volume `seolin_safecheck_pgdata`
+- `backend`: Express API, 내부 포트 3000
+- `frontend`: nginx, 외부 포트 `${FRONTEND_PORT:-8080}`
+
+운영에서는 PostgreSQL 포트를 외부로 공개하지 않습니다. backend도 직접 공개하지 않고 frontend/nginx를 공개 진입점으로 사용합니다.
+
+## 8. nginx 라우팅
+
+`nginx/default.conf`는 다음을 처리합니다.
+
+- `/driver/...`: 정적 기사님 화면
+- `/admin/...`: 정적 관리자 화면
+- `/assets/...`, `/src/...`: 정적 리소스
+- `/api/...`: `backend:3000/api/...`로 프록시
+
+프론트엔드는 운영 도메인에서 열리면 기본적으로 same-origin `/api`를 사용합니다. 로컬 `localhost`나 `file://`에서는 기존처럼 `http://localhost:3000`을 기본값으로 사용합니다.
+
+## 9. DB 초기화
+
+운영 DB는 자동 reset하지 않습니다.
+
+초기 설치 시에만 신중하게 schema/seed 적용을 검토합니다.
+
+개발용 명령:
 
 ```sh
-curl http://NAS_IP:3000/api/health
+cd server
+npm run db:reset:dev
 ```
 
-현재 `docker-compose.yml`은 backend와 PostgreSQL db 서비스를 포함합니다. DB 초기화에는 `server/src/db/schema.sql`, `server/src/db/seed.sql`을 사용합니다.
+운영에서는 `docker compose down -v`를 함부로 실행하지 않습니다. 이 명령은 PostgreSQL volume을 삭제해 운영 DB 데이터를 잃을 수 있습니다.
 
-## 8. 포트 전략
+## 10. Reverse Proxy / HTTPS
 
-현재 backend 기본 포트:
+권장 개념:
 
 ```txt
-3000
+https://YOUR_DOMAIN
+  -> Synology Reverse Proxy
+  -> http://NAS_INTERNAL_IP:8080
+  -> frontend nginx
+  -> /api/* proxy to backend
 ```
 
-권장:
+체크리스트:
 
-- 내부 컨테이너 포트: `3000`
-- PostgreSQL 개발 포트: `5432`
-- NAS 내부 접근: `http://NAS_IP:3000`
-- 외부 접근: Reverse Proxy를 통해 HTTPS 도메인 사용
+- 도메인/DDNS가 NAS를 가리키는지 확인
+- DSM Reverse Proxy 대상이 frontend 포트인지 확인
+- HTTPS 인증서 적용
+- HTTP에서 HTTPS 리다이렉트
+- `https://YOUR_DOMAIN/api/health` 응답 확인
+- `CORS_ORIGIN=https://YOUR_DOMAIN` 설정
 
-외부에 직접 `3000` 또는 `5432` 포트를 노출하는 방식은 운영 환경에서는 권장하지 않습니다.
+## 11. 모바일 접근 테스트
 
-## 9. Reverse Proxy / HTTPS 메모
-
-운영 시 권장 구조:
+확인 URL:
 
 ```txt
-https://safecheck.example.com
-        |
-        v
-Synology Reverse Proxy
-        |
-        v
-backend:3000
+https://YOUR_DOMAIN/driver/login/index.html
+https://YOUR_DOMAIN/admin/login/index.html
+https://YOUR_DOMAIN/api/health
 ```
 
 확인 항목:
 
-- HTTPS 인증서 적용
-- HTTP에서 HTTPS로 리다이렉트
-- `/api` 요청이 backend로 전달되는지 확인
-- CORS origin과 실제 도메인 일치 여부 확인
+- 모바일 브라우저에서 기사님 로그인 화면 표시
+- 관리자 화면 접근
+- API health 응답
+- 로그인 후 API 호출이 `/api`로 정상 프록시되는지 확인
 
-## 10. 백업 메모
+## 12. SMS 운영 주의
 
-현재 백업 후보:
+기본은 mock입니다.
 
-- GitHub 저장소
-- NAS의 `.env` 파일
-- 배포 설정 메모
-- DB 데이터 볼륨
-- DB dump 파일
+실제 SOLAPI 발송을 켜려면 운영자가 아래 값을 명시적으로 설정해야 합니다.
 
-후속 기능 추가 후 백업 후보:
+```txt
+SMS_PROVIDER=solapi
+SMS_REAL_SEND_ENABLED=true
+SMS_TEST_MODE=true
+SMS_TEST_TO=테스트_수신번호
+```
 
-- Excel export 저장 폴더
-- SMS 발송 로그
+운영 발송 전:
 
-## 11. 보안 메모
+- 발신번호 등록 확인
+- API Key 권한/IP 제한 확인
+- test mode로 1건 발송 확인
+- `SMS_TEST_MODE=false` 전환은 실제 학부모 번호 발송 전 최종 승인 후 진행
 
-- 실제 `.env` 파일은 Git에 커밋하지 않습니다.
-- 관리자 계정과 기사님 계정은 권한을 분리합니다.
-- 외부 접속 시 HTTPS를 사용합니다.
-- SMS API Key는 환경변수로 관리합니다.
-- 서버 로그에 학부모 연락처 등 개인정보를 과도하게 남기지 않습니다.
-- NAS 관리자 계정과 컨테이너 접근 권한을 최소화합니다.
+## 13. 백업 권장
 
-## 12. PostgreSQL DB 컨테이너 메모
+- PostgreSQL volume 정기 백업
+- 운영 `.env` 별도 보관
+- NAS Container Manager compose 설정 백업
+- 배포 버전 Git commit 기록
+- Excel export 파일은 운영 백업과 별도 정책 수립
+- SMS 로그는 개인정보 최소화 원칙으로 관리
 
-현재 기본 DB는 PostgreSQL입니다.
-
-- PostgreSQL
-
-현재 포함된 항목:
-
-- DB 컨테이너
-- DB 볼륨
-- DB 계정/비밀번호 환경변수
-- DB 연결 모듈
-- schema SQL
-- development seed SQL
-
-후속 작업에서 확정할 항목:
-
-- 운영 백업 정책
-- 운영 계정/비밀번호
-- 마이그레이션 운영 방식
-- NAS 장애 복구 절차
-
-## 13. 향후 SMS Provider 메모
-
-SMS provider는 추후 확정 필요입니다.
-
-운영 전 확인 항목:
-
-- 발신번호 등록
-- 과금 방식
-- API Key 보관 방식
-- 실패 재시도 정책
-- 문자 템플릿
-- not_boarded 문자 발송 옵션
-
-현재 작업에서는 실제 SMS 발송을 구현하지 않습니다.
-
-## 14. 문제 해결 체크리스트
+## 14. 문제 해결
 
 컨테이너가 시작되지 않을 때:
 
-- `server/.env` 파일 존재 여부 확인
-- `PORT` 값 확인
-- NAS 포트 충돌 확인
-- `docker compose logs backend` 확인
+- `.env` 존재 여부
+- `DATABASE_URL`의 host가 `db`인지 확인
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` 확인
+- `docker compose -f docker-compose.prod.yml logs backend`
 
-Health API가 응답하지 않을 때:
+화면은 열리지만 API가 실패할 때:
 
-- 컨테이너 상태 확인
-- `3000:3000` 포트 매핑 확인
-- NAS 방화벽 확인
-- Reverse Proxy 대상 포트 확인
+- `https://YOUR_DOMAIN/api/health` 확인
+- frontend nginx 로그 확인
+- backend 컨테이너가 실행 중인지 확인
+- Reverse Proxy가 frontend 포트로 연결되는지 확인
 
-CORS 오류가 날 때:
+SMS가 발송되지 않을 때:
 
-- `CORS_ORIGIN` 값 확인
-- 프론트엔드 실제 origin 확인
-- 운영 도메인과 HTTPS 설정 확인
+- `SMS_PROVIDER`
+- `SMS_REAL_SEND_ENABLED`
+- `SMS_TEST_MODE`
+- `SMS_TEST_TO`
+- SOLAPI Key/Secret/Sender Number
+- sms log의 `status`, `provider`, `errorMessage`
 
-## 15. 후속 작업
+## 15. 운영 금지/주의 명령
 
-권장 순서:
+운영에서 아래 명령은 DB 삭제 위험이 있으므로 신중히 사용합니다.
 
-1. NAS 배포 환경의 API base URL 확정
-2. PostgreSQL schema/seed 적용 절차 검증
-3. 운영용 인증 방식 보강
-4. 관리자 최소 CRUD API 구현
-5. 관리자 화면 구현
-6. SMS mock provider 서버 측 분리
-7. 실제 SMS provider 연동
+```sh
+docker compose down -v
+```
+
+운영 DB를 초기화하는 reset 스크립트는 제공하지 않습니다.
