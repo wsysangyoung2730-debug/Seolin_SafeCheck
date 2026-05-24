@@ -6,7 +6,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "check": "node --check src/app.js && node --check src/server.js && node --check src/db/pool.js && node --check src/db/health.js && node --check src/db/developmentSchema.js && node --check src/routes/health.routes.js && node --check src/routes/auth.routes.js && node --check src/routes/admin.routes.js && node --check src/routes/driver.routes.js && node --check src/services/auth.service.js && node --check src/services/admin.service.js && node --check src/services/schedule.service.js && node --check src/services/attendance.service.js && node --check src/repositories/user.repository.js && node --check src/repositories/admin.repository.js && node --check src/repositories/vehicle.repository.js && node --check src/repositories/schedule.repository.js && node --check src/repositories/student.repository.js && node --check src/repositories/attendance.repository.js && node --check src/repositories/settings.repository.js",
+    "check": "node --check src/app.js && node --check src/server.js && node --check src/db/pool.js && node --check src/db/health.js && node --check src/db/developmentSchema.js && node --check src/routes/health.routes.js && node --check src/routes/auth.routes.js && node --check src/routes/admin.routes.js && node --check src/routes/driver.routes.js && node --check src/services/auth.service.js && node --check src/services/admin.service.js && node --check src/services/schedule.service.js && node --check src/services/attendance.service.js && node --check src/services/excel/excel.service.js && node --check src/services/sms/mockSmsProvider.js && node --check src/services/sms/sms.service.js && node --check src/repositories/user.repository.js && node --check src/repositories/admin.repository.js && node --check src/repositories/vehicle.repository.js && node --check src/repositories/schedule.repository.js && node --check src/repositories/student.repository.js && node --check src/repositories/attendance.repository.js && node --check src/repositories/settings.repository.js && node --check src/repositories/sms.repository.js",
     "db:schema": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f src/db/schema.sql",
     "db:seed": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f src/db/seed.sql",
     "db:reset:dev": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f src/db/schema.sql && psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f src/db/seed.sql"
@@ -14,7 +14,9 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
     "express": "^4.21.2",
+    "multer": "^2.1.1",
     "pg": "^8.13.1"
   },
   "engines": {

@@ -19,6 +19,11 @@ const {
   updateAdminStudent,
   updateAdminVehicle,
 } = require("../repositories/admin.repository");
+const {
+  buildAttendanceWorkbook,
+  previewStudentImport,
+} = require("./excel/excel.service");
+const { getAdminSmsLogs } = require("./sms/sms.service");
 
 const VALID_ATTENDANCE_STATUSES = new Set([
   "unchecked",
@@ -416,6 +421,43 @@ async function getAdminAttendanceRecords(filters) {
   };
 }
 
+async function exportAdminAttendanceRecords(filters) {
+  if (!filters.date) {
+    return {
+      success: false,
+      message: "엑셀 다운로드를 위한 날짜를 선택해주세요.",
+    };
+  }
+
+  const result = await getAdminAttendanceRecords(filters);
+
+  if (!result.success) {
+    return result;
+  }
+
+  return {
+    success: true,
+    data: {
+      buffer: await buildAttendanceWorkbook(result.data.attendanceRecords),
+      filename: `seolin-attendance-${filters.date}.xlsx`,
+    },
+  };
+}
+
+async function previewExcelImport(file) {
+  if (!file?.buffer) {
+    return {
+      success: false,
+      message: "엑셀 파일을 첨부해주세요.",
+    };
+  }
+
+  return {
+    success: true,
+    data: await previewStudentImport(file.buffer),
+  };
+}
+
 async function createStudent(input) {
   const student = normalizeStudentInput(input);
   const validationMessage = validateStudentInput(student);
@@ -508,11 +550,14 @@ module.exports = {
   deactivateStudent,
   deactivateVehicle,
   getAdminAttendanceRecords,
+  exportAdminAttendanceRecords,
   getAdminOverview,
   getAdminSchedules,
   getAdminStudents,
   getAdminVehicles,
+  getAdminSmsLogs,
   getScheduleStudents,
+  previewExcelImport,
   updateSchedule,
   updateScheduleStudents,
   updateStudent,

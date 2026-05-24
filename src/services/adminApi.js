@@ -1,4 +1,6 @@
 import { apiGet, apiPatch, apiPost, apiPut } from "./apiClient.js";
+import { getApiBaseUrl } from "../config/apiConfig.js";
+import { getStoredAdminSession } from "./adminSession.js";
 
 const ADMIN_AUTH_OPTIONS = {
   authRole: "admin",
@@ -181,4 +183,58 @@ export async function getAdminAttendanceRecords({ date, vehicleId, scheduleId })
     `/api/admin/attendance-records${queryString ? `?${queryString}` : ""}`,
     ADMIN_AUTH_OPTIONS,
   );
+}
+
+export async function downloadAdminAttendanceRecords({ date, vehicleId, scheduleId }) {
+  const query = new URLSearchParams();
+
+  if (date) {
+    query.set("date", date);
+  }
+
+  if (vehicleId) {
+    query.set("vehicleId", vehicleId);
+  }
+
+  if (scheduleId) {
+    query.set("scheduleId", scheduleId);
+  }
+
+  const session = getStoredAdminSession();
+  const response = await fetch(
+    `${getApiBaseUrl()}/api/admin/attendance-records/export?${query.toString()}`,
+    {
+      headers: session?.token
+        ? { Authorization: `Bearer ${session.token}` }
+        : {},
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("엑셀 파일을 다운로드하지 못했습니다.");
+  }
+
+  return response.blob();
+}
+
+export async function previewExcelImport(file) {
+  const formData = new FormData();
+  const session = getStoredAdminSession();
+
+  formData.append("file", file);
+
+  const response = await fetch(`${getApiBaseUrl()}/api/admin/excel/import/preview`, {
+    method: "POST",
+    headers: session?.token
+      ? { Authorization: `Bearer ${session.token}` }
+      : {},
+    body: formData,
+  });
+  const payload = await response.json();
+
+  if (!response.ok || !payload.success) {
+    throw new Error(payload.error?.message || "엑셀 파일을 확인하지 못했습니다.");
+  }
+
+  return payload.data;
 }

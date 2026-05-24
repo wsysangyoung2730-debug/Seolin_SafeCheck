@@ -58,7 +58,10 @@
               <span>시간표</span>
               <select id="schedule-filter"></select>
             </label>
-            <button id="load-attendance-button" class="primary-button" type="button">조회</button>
+            <div class="filter-actions">
+              <button id="load-attendance-button" class="primary-button" type="button">조회</button>
+              <button id="export-attendance-button" class="secondary-button" type="button">엑셀 다운로드</button>
+            </div>
           </section>
 
           <div id="attendance-summary" class="metric-grid metric-grid--compact" aria-live="polite"></div>

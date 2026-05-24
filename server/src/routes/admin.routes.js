@@ -1,4 +1,5 @@
 const express = require("express");
+const multer = require("multer");
 
 const { getCurrentUser } = require("../services/auth.service");
 const {
@@ -8,12 +9,15 @@ const {
   deactivateSchedule,
   deactivateStudent,
   deactivateVehicle,
+  exportAdminAttendanceRecords,
   getAdminAttendanceRecords,
   getAdminOverview,
   getAdminSchedules,
   getAdminStudents,
+  getAdminSmsLogs,
   getAdminVehicles,
   getScheduleStudents,
+  previewExcelImport,
   updateSchedule,
   updateScheduleStudents,
   updateStudent,
@@ -22,6 +26,12 @@ const {
 const { errorResponse, successResponse } = require("../utils/apiResponse");
 
 const router = express.Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 2 * 1024 * 1024,
+  },
+});
 
 function asyncHandler(handler) {
   return (req, res, next) => {
@@ -241,6 +251,50 @@ router.get("/attendance-records", asyncHandler(async (req, res) => {
   }
 
   return res.json(successResponse(result.data));
+}));
+
+router.get("/attendance-records/export", asyncHandler(async (req, res) => {
+  const result = await exportAdminAttendanceRecords({
+    date: req.query.date,
+    vehicleId: req.query.vehicleId,
+    scheduleId: req.query.scheduleId,
+  });
+
+  if (!result.success) {
+    return res.status(400).json(
+      errorResponse("VALIDATION_ERROR", result.message),
+    );
+  }
+
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  );
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${result.data.filename}"`,
+  );
+  return res.send(result.data.buffer);
+}));
+
+router.post("/excel/import/preview", upload.single("file"), asyncHandler(async (req, res) => {
+  const result = await previewExcelImport(req.file);
+
+  if (!result.success) {
+    return res.status(400).json(
+      errorResponse("VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
+router.get("/sms-logs", asyncHandler(async (req, res) => {
+  const result = await getAdminSmsLogs({
+    date: req.query.date,
+  });
+
+  return res.json(successResponse(result));
 }));
 
 module.exports = router;

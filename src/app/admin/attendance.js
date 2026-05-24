@@ -1,4 +1,5 @@
 import {
+  downloadAdminAttendanceRecords,
   getAdminAttendanceRecords,
   getAdminSchedules,
   getAdminVehicles,
@@ -10,6 +11,7 @@ const dateInput = document.querySelector("#attendance-date");
 const vehicleFilter = document.querySelector("#vehicle-filter");
 const scheduleFilter = document.querySelector("#schedule-filter");
 const loadButton = document.querySelector("#load-attendance-button");
+const exportButton = document.querySelector("#export-attendance-button");
 const summaryGrid = document.querySelector("#attendance-summary");
 const tableBody = document.querySelector("#attendance-table-body");
 const message = document.querySelector("#attendance-message");
@@ -183,6 +185,33 @@ async function loadAttendanceRecords() {
   }
 }
 
+async function downloadAttendanceExcel() {
+  exportButton.disabled = true;
+  setMessage("엑셀 파일을 준비하는 중입니다.", "info");
+
+  try {
+    const blob = await downloadAdminAttendanceRecords({
+      date: dateInput.value,
+      vehicleId: vehicleFilter.value,
+      scheduleId: scheduleFilter.value,
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `seolin-attendance-${dateInput.value}.xlsx`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setMessage("엑셀 파일을 다운로드했습니다.", "success");
+  } catch {
+    setMessage("엑셀 파일을 다운로드하지 못했습니다.", "error");
+  } finally {
+    exportButton.disabled = false;
+  }
+}
+
 async function initializeAttendance() {
   const session = await requireAdminSession();
 
@@ -206,6 +235,7 @@ async function initializeAttendance() {
     renderScheduleOptions();
   });
   loadButton.addEventListener("click", loadAttendanceRecords);
+  exportButton.addEventListener("click", downloadAttendanceExcel);
 }
 
 initializeAttendance();
