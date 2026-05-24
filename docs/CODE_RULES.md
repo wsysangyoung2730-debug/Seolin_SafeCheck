@@ -297,7 +297,7 @@ services/sms/providers/realSmsProvider.ts
 
 ### 12.4 개발 환경
 
-개발 환경에서는 실제 문자를 발송하지 않습니다. 개발 환경에서는 mock provider를 사용합니다.
+기본 개발 환경에서는 실제 문자를 발송하지 않습니다. SOLAPI 실제 테스트는 `SMS_PROVIDER=solapi`, `SMS_REAL_SEND_ENABLED=true`, `SMS_TEST_MODE=true`, `SMS_TEST_TO`가 모두 준비된 경우에만 1건씩 수행합니다.
 
 ```ts
 if (process.env.NODE_ENV === "development") {

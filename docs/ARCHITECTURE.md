@@ -468,7 +468,8 @@ interface ApiResponse<T> {
 - 문자 발송 성공/실패는 `SmsLog`에 기록합니다.
 - 문자 발송 실패가 출결 저장 실패로 이어지지 않도록 합니다.
 - SMS 제공업체 변경을 고려하여 provider interface를 분리합니다.
-- 개발 환경에서는 mock provider를 사용합니다.
+- 기본 개발 환경에서는 mock provider를 사용합니다.
+- SOLAPI provider는 환경변수로만 활성화하며, test mode에서는 모든 수신번호를 `SMS_TEST_TO`로 대체합니다.
 
 문자 발송 조건:
 

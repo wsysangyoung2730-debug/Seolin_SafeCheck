@@ -1,21 +1,8 @@
 const pool = require("../db/pool");
+const { maskPhoneNumber } = require("../services/sms/phoneNumber");
 
 function createSmsLogId({ attendanceRecordId, status }) {
   return `sms_${attendanceRecordId}_${status}_${Date.now()}`;
-}
-
-function maskContact(parentPhone) {
-  if (!parentPhone) {
-    return null;
-  }
-
-  const digits = parentPhone.replace(/\D/g, "");
-
-  if (digits.length < 4) {
-    return "****";
-  }
-
-  return `****${digits.slice(-4)}`;
 }
 
 async function findSmsTargets({ date, scheduleId, statuses }) {
@@ -49,7 +36,7 @@ async function findSmsTargets({ date, scheduleId, statuses }) {
     studentId: row.student_id,
     studentName: row.student_name,
     parentPhone: row.parent_phone,
-    parentContactMasked: maskContact(row.parent_phone),
+    parentContactMasked: maskPhoneNumber(row.parent_phone),
     startTime:
       typeof row.start_time === "string"
         ? row.start_time.slice(0, 5)
@@ -151,5 +138,4 @@ module.exports = {
   findSmsLogs,
   findSmsTargets,
   insertSmsLog,
-  maskContact,
 };
