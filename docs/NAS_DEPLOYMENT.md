@@ -2,7 +2,7 @@
 
 ## 1. 목적
 
-이 문서는 Seolin SafeCheck를 Synology NAS의 Container Manager 또는 Docker Compose로 실행하기 위한 배포 준비 가이드입니다. 실제 NAS 배포, 도메인 등록, 인증서 발급, 운영 계정 생성은 이 작업에 포함하지 않습니다.
+이 문서는 Seolin SafeCheck를 Synology NAS의 Docker UI 또는 Docker Compose로 실행하기 위한 배포 준비 가이드입니다. 실제 NAS 배포, 도메인 등록, 인증서 발급, 운영 계정 생성은 이 작업에 포함하지 않습니다.
 
 목표 운영 구조:
 
@@ -30,7 +30,8 @@ server/.dockerignore
 ## 3. NAS 사전 준비
 
 - Synology DSM
-- Container Manager 설치
+- Docker 패키지 설치
+- DSM 7.1.1 또는 구형 모델에서 Container Manager Project 기능이 없으면 Synology Docker UI로 수동 컨테이너를 생성합니다.
 - 프로젝트를 둘 공유 폴더
 - Docker volume을 저장할 충분한 공간
 - 도메인 또는 DDNS
@@ -104,6 +105,35 @@ docker compose -f docker-compose.prod.yml logs frontend
 docker compose -f docker-compose.prod.yml logs db
 ```
 
+## 6-1. Synology Docker UI 수동 생성 개념
+
+SSH나 Container Manager Project를 쓰기 어렵다면 Docker UI에서 컨테이너를 수동으로 만듭니다.
+
+권장 생성 순서:
+
+1. PostgreSQL 컨테이너
+2. backend 컨테이너
+3. frontend nginx 컨테이너
+
+PostgreSQL 컨테이너 첫 생성 시:
+
+- PostgreSQL 데이터 폴더를 NAS 공유 폴더 또는 Docker volume에 영구 저장합니다.
+- `server/src/db/schema.sql`만 `/docker-entrypoint-initdb.d/01-schema.sql`로 읽기 전용 마운트합니다.
+- `server/src/db/seed.sql`은 운영 DB에 마운트하지 않습니다.
+
+이렇게 시작하면 운영 DB는 테이블만 만들어진 빈 DB로 시작합니다. 원생, 시간표, 출결 seed 데이터는 들어가지 않습니다.
+
+backend 컨테이너:
+
+- `DATABASE_URL`의 host는 PostgreSQL 컨테이너 이름 또는 Docker 네트워크 별칭을 사용합니다.
+- `CORS_ORIGIN=https://YOUR_DOMAIN`으로 설정합니다.
+- SOLAPI 값은 NAS Docker UI 환경변수에 직접 입력하고 Git에 남기지 않습니다.
+
+frontend 컨테이너:
+
+- 외부 포트는 예를 들어 `8080:80`으로 연결합니다.
+- Synology Reverse Proxy는 `https://YOUR_DOMAIN`을 frontend 컨테이너 포트로 연결합니다.
+
 ## 7. 서비스 구조
 
 `docker-compose.prod.yml` 서비스:
@@ -129,7 +159,23 @@ docker compose -f docker-compose.prod.yml logs db
 
 운영 DB는 자동 reset하지 않습니다.
 
-초기 설치 시에만 신중하게 schema/seed 적용을 검토합니다.
+`docker-compose.prod.yml`은 PostgreSQL volume이 완전히 비어 있는 첫 실행 시 `schema.sql`만 자동 적용합니다. 운영에서는 `seed.sql`을 자동 적용하지 않습니다.
+
+운영 초기 로그인에는 최소 계정만 별도로 생성합니다.
+
+- 관리자 계정 1개
+- 기사님 계정 `car1`, `car2`
+- 각 기사님 계정에 연결된 차량 `1호차`, `2호차`
+
+운영 비밀번호/PIN은 실제 운영자가 NAS에서 직접 설정합니다. 문서나 Git에는 남기지 않습니다.
+
+참고 템플릿:
+
+```txt
+server/src/db/production-initial-accounts.example.sql
+```
+
+이 파일은 예시입니다. NAS에서 복사한 뒤 `CHANGE_ME_*` 값을 실제 운영 PIN으로 바꿔 1회만 실행합니다. 수정된 실제 운영 SQL 파일은 Git에 커밋하지 않습니다.
 
 개발용 명령:
 
