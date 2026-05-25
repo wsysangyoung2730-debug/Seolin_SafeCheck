@@ -11,6 +11,8 @@ const DEVELOPMENT_ADMIN_TOKEN = "mock-admin-token-admin";
 const DEVELOPMENT_ADMIN_ID = "admin_1";
 const DEVELOPMENT_DRIVER_TOKEN = "mock-driver-token-car1";
 const DEVELOPMENT_DRIVER_ID = "driver_car1";
+const ADMIN_TOKEN_PREFIX = "mock-admin-token-";
+const DRIVER_TOKEN_PREFIX = "mock-driver-token-";
 
 async function loginAdmin({ accountId, password, pin }) {
   const credential = password || pin;
@@ -24,7 +26,7 @@ async function loginAdmin({ accountId, password, pin }) {
 
   return {
     success: true,
-    token: DEVELOPMENT_ADMIN_TOKEN,
+    token: createUserToken(adminUser),
     user: toPublicAdminUser(adminUser),
   };
 }
@@ -41,9 +43,17 @@ async function loginDriver({ accountId, password, pin }) {
 
   return {
     success: true,
-    token: DEVELOPMENT_DRIVER_TOKEN,
+    token: createUserToken(driverUser),
     user: toPublicDriverUser(driverUser),
   };
+}
+
+function createUserToken(user) {
+  if (user.role === "admin") {
+    return `${ADMIN_TOKEN_PREFIX}${user.id}`;
+  }
+
+  return `${DRIVER_TOKEN_PREFIX}${user.id}`;
 }
 
 function extractMockToken(req) {
@@ -67,6 +77,16 @@ async function getCurrentUser(req) {
   if (token === DEVELOPMENT_DRIVER_TOKEN) {
     const driverUser = await findActiveUserById(DEVELOPMENT_DRIVER_ID);
     return toPublicUser(driverUser);
+  }
+
+  if (token.startsWith(ADMIN_TOKEN_PREFIX)) {
+    const adminUser = await findActiveUserById(token.slice(ADMIN_TOKEN_PREFIX.length));
+    return adminUser?.role === "admin" ? toPublicUser(adminUser) : null;
+  }
+
+  if (token.startsWith(DRIVER_TOKEN_PREFIX)) {
+    const driverUser = await findActiveUserById(token.slice(DRIVER_TOKEN_PREFIX.length));
+    return driverUser?.role === "driver" ? toPublicUser(driverUser) : null;
   }
 
   return null;

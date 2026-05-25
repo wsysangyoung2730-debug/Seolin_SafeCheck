@@ -12,6 +12,7 @@ insert into users (
   is_active
 ) values
   ('driver_car1', 'car1', null, '1234', 'driver', '1호차 기사님', true),
+  ('driver_car2', 'car2', null, '1234', 'driver', '2호차 기사님', true),
   ('admin_1', 'admin', null, '1234', 'admin', '관리자', true)
 on conflict (id) do update set
   login_id = excluded.login_id,
@@ -22,7 +23,8 @@ on conflict (id) do update set
   updated_at = now();
 
 insert into vehicles (id, name, driver_user_id, is_active) values
-  ('vehicle_1', '1호차', 'driver_car1', true)
+  ('vehicle_1', '1호차', 'driver_car1', true),
+  ('vehicle_2', '2호차', 'driver_car2', true)
 on conflict (id) do update set
   name = excluded.name,
   driver_user_id = excluded.driver_user_id,

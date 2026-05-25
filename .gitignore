@@ -12,6 +12,9 @@ server/node_modules/
 *.backup
 *.bak
 *.sql.gz
+server/src/db/production-initial-accounts.sql
+server/src/db/*.local.sql
+server/src/db/*.prod.sql
 *.xlsx
 *.xls
 exports/
