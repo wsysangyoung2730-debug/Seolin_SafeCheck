@@ -109,11 +109,21 @@ docker compose -f docker-compose.prod.yml logs db
 
 SSH나 Container Manager Project를 쓰기 어렵다면 Docker UI에서 컨테이너를 수동으로 만듭니다.
 
+Docker UI 방식에서는 NAS에서 Dockerfile을 직접 build하지 않고, 공식 이미지를 내려받은 뒤 프로젝트 폴더를 컨테이너에 마운트해 실행하는 방식을 권장합니다.
+
 권장 생성 순서:
 
 1. PostgreSQL 컨테이너
 2. backend 컨테이너
 3. frontend nginx 컨테이너
+
+공통 준비:
+
+- GitHub에서 최신 코드를 내려받거나 압축 파일로 받아 NAS 공유 폴더에 업로드합니다.
+- 예시 위치: `/volume1/docker/seolin-safecheck`
+- 실제 운영 `.env`는 NAS에만 만들고 Git에 커밋하지 않습니다.
+- 가능하면 Docker UI에서 사용자 정의 bridge 네트워크를 하나 만들고 세 컨테이너를 같은 네트워크에 둡니다.
+- 네트워크 이름 예시: `seolin-safecheck-net`
 
 PostgreSQL 컨테이너 첫 생성 시:
 
@@ -123,16 +133,84 @@ PostgreSQL 컨테이너 첫 생성 시:
 
 이렇게 시작하면 운영 DB는 테이블만 만들어진 빈 DB로 시작합니다. 원생, 시간표, 출결 seed 데이터는 들어가지 않습니다.
 
+Docker UI 입력 예시:
+
+```txt
+이미지: postgres:16-alpine
+컨테이너 이름: seolin-safecheck-prod-db
+네트워크: seolin-safecheck-net
+외부 포트: 공개하지 않음
+환경변수:
+  POSTGRES_DB=운영_DB_이름
+  POSTGRES_USER=운영_DB_사용자
+  POSTGRES_PASSWORD=운영_DB_비밀번호
+볼륨:
+  NAS 데이터 폴더 -> /var/lib/postgresql/data
+  /volume1/docker/seolin-safecheck/server/src/db/schema.sql -> /docker-entrypoint-initdb.d/01-schema.sql : 읽기 전용
+재시작 정책: unless-stopped 또는 항상 재시작
+```
+
 backend 컨테이너:
 
 - `DATABASE_URL`의 host는 PostgreSQL 컨테이너 이름 또는 Docker 네트워크 별칭을 사용합니다.
 - `CORS_ORIGIN=https://YOUR_DOMAIN`으로 설정합니다.
 - SOLAPI 값은 NAS Docker UI 환경변수에 직접 입력하고 Git에 남기지 않습니다.
 
+Docker UI 입력 예시:
+
+```txt
+이미지: node:20-alpine
+컨테이너 이름: seolin-safecheck-prod-backend
+네트워크: seolin-safecheck-net
+외부 포트: 공개하지 않음
+작업 디렉터리: /app
+명령:
+  sh -c "npm ci --omit=dev && node src/server.js"
+볼륨:
+  /volume1/docker/seolin-safecheck/server -> /app
+환경변수:
+  NODE_ENV=production
+  PORT=3000
+  CORS_ORIGIN=https://YOUR_DOMAIN
+  DATABASE_URL=postgres://운영_DB_사용자:운영_DB_비밀번호@seolin-safecheck-prod-db:5432/운영_DB_이름
+  SMS_PROVIDER=mock
+  SMS_REAL_SEND_ENABLED=false
+  SMS_TEST_MODE=true
+  SMS_TEST_TO=
+  SOLAPI_API_KEY=
+  SOLAPI_API_SECRET=
+  SOLAPI_SENDER_NUMBER=
+재시작 정책: unless-stopped 또는 항상 재시작
+```
+
+운영 SMS를 켜기 전까지는 `SMS_PROVIDER=mock`, `SMS_REAL_SEND_ENABLED=false`를 유지합니다.
+
 frontend 컨테이너:
 
 - 외부 포트는 예를 들어 `8080:80`으로 연결합니다.
 - Synology Reverse Proxy는 `https://YOUR_DOMAIN`을 frontend 컨테이너 포트로 연결합니다.
+
+Docker UI 입력 예시:
+
+```txt
+이미지: nginx:1.27-alpine
+컨테이너 이름: seolin-safecheck-prod-frontend
+네트워크: seolin-safecheck-net
+포트:
+  NAS 8080 -> 컨테이너 80
+볼륨:
+  /volume1/docker/seolin-safecheck/index.html -> /usr/share/nginx/html/index.html : 읽기 전용
+  /volume1/docker/seolin-safecheck/driver -> /usr/share/nginx/html/driver : 읽기 전용
+  /volume1/docker/seolin-safecheck/admin -> /usr/share/nginx/html/admin : 읽기 전용
+  /volume1/docker/seolin-safecheck/assets -> /usr/share/nginx/html/assets : 읽기 전용
+  /volume1/docker/seolin-safecheck/src -> /usr/share/nginx/html/src : 읽기 전용
+  /volume1/docker/seolin-safecheck/nginx/default.conf -> /etc/nginx/conf.d/default.conf : 읽기 전용
+재시작 정책: unless-stopped 또는 항상 재시작
+```
+
+프로젝트 루트 전체를 `/usr/share/nginx/html`에 마운트하지 않습니다. 루트 전체를 공개하면 `server/`, `.env`, 내부 설정 파일이 웹에서 노출될 수 있습니다.
+
+수동 Docker UI 방식에서 `/api`가 연결되지 않으면 먼저 세 컨테이너가 같은 사용자 정의 네트워크에 있는지 확인합니다. 기본 bridge 네트워크만 사용할 경우 컨테이너 이름 DNS가 동작하지 않을 수 있습니다.
 
 ## 7. 서비스 구조
 
@@ -197,6 +275,22 @@ https://YOUR_DOMAIN
   -> frontend nginx
   -> /api/* proxy to backend
 ```
+
+현재 테스트 도메인이 `seolin1988.synology.me`라면 Reverse Proxy 예시는 다음과 같습니다.
+
+```txt
+소스:
+  프로토콜: HTTPS
+  호스트 이름: seolin1988.synology.me
+  포트: 443
+
+대상:
+  프로토콜: HTTP
+  호스트 이름: NAS 내부 IP
+  포트: 8080
+```
+
+DSM 인증서 메뉴에서 `seolin1988.synology.me` 인증서를 이 Reverse Proxy 규칙에 연결합니다.
 
 체크리스트:
 
