@@ -1,240 +1,151 @@
 # Seolin SafeCheck
 
-**Seolin SafeCheck**는 서린태권도 등원 차량 기사님이 원생의 차량 탑승 여부를 쉽고 빠르게 기록하고, 그 결과를 관리자 대시보드, 데이터베이스 기록, 엑셀 내보내기, 학부모 문자 알림으로 연결하는 스마트 차량 출결 관리 시스템입니다. 첫 구현 목표는 기사님용 모바일 웹앱/PWA와 관리자용 PC 웹 대시보드입니다.
+Seolin SafeCheck는 서린태권도의 등원 차량 운행과 원생 탑승 출결을 관리하는 웹 시스템입니다.
 
-## 1. 프로젝트 목적
+기사님은 차량별 당일 시간표와 원생 목록을 확인하고 탑승 상태를 저장할 수 있습니다. 관리자는 원생, 차량, 요일별 시간표, 원생 배정과 출결 기록을 한곳에서 관리할 수 있습니다.
 
-서린태권도 등원 차량 운영에서 발생할 수 있는 수기 확인, 구두 전달, 엑셀 파일 분산 관리, 학부모 안내 지연 문제를 줄이는 것이 목적입니다.
-
-Seolin SafeCheck는 기사님이 모바일에서 원생별 상태를 `탑승` 또는 `미탑승`으로 간단히 표시하고, `전체 저장`을 눌렀을 때 출결 기록을 서버 DB에 저장합니다. 저장이 완료되면 기본적으로 `탑승` 처리된 원생의 학부모에게 문자 발송 요청이 생성됩니다.
-
-## 2. 주요 사용자
+## 주요 사용자
 
 ### 기사님
 
-- 모바일 웹앱/PWA 사용
-- 호차 계정으로 로그인
-- 로그인 상태 유지
-- 본인 호차에 배정된 시간대별 원생 목록 확인
-- 원생별 탑승 장소 확인
-- 원생 상태를 `미확인`, `탑승`, `미탑승`으로 변경
-- `전체 저장` 버튼으로 해당 시간대 출결 확정
-- 필요 시 최소 정보로 임시 탑승 원생 추가
+- 차량 계정으로 로그인
+- 로그인한 차량의 오늘 운행 시간표 확인
+- 시간표별 원생과 탑승 장소 확인
+- 원생 상태를 `탑승`, `미탑승`, `미확인`으로 기록
+- 전체 출결 저장
+- 저장된 최신 출결 상태 재확인
 
 ### 관리자
 
-- PC 웹 대시보드 사용
-- 차량, 기사님 계정, 시간대, 원생, 탑승 장소, 학부모 연락처 관리
-- 날짜별 출결 기록 조회
-- 문자 발송 기록 조회
-- 문자 발송 옵션 관리
-- 기존 엑셀 명단 가져오기
-- 출결 기록 엑셀 내보내기
+- 관리자 계정으로 로그인
+- 원생 등록, 수정, 미이용 처리
+- 차량 등록, 수정, 비활성화
+- 요일과 차량 기준의 등원 시간표 관리
+- 시간표별 원생 배정과 검색
+- 날짜, 차량, 시간표 기준 출결 기록 조회
+- 출결 기록 Excel 다운로드
+- Excel 파일 미리보기와 데이터 검증
+- SMS 처리 결과 조회
 
 ### 학부모
 
-- MVP에서는 별도 앱을 사용하지 않음
-- 자녀가 차량에 탑승했을 때 문자 알림 수신
-- `미탑승` 문자는 기본 발송하지 않으며, 관리자 설정으로 선택 발송 가능
+- 별도 앱 없이 원생 탑승 완료 문자를 수신
+- 문자 발송은 설정된 SMS 정책과 수신 연락처가 있는 경우에만 수행
 
-## 3. 핵심 기능
+## 출결 처리 기준
 
-### 기사님용 모바일 웹앱/PWA
+| 내부 상태 | 화면 표시 | 의미 |
+| --- | --- | --- |
+| `unchecked` | 미확인 | 아직 탑승 여부를 확인하지 않음 |
+| `boarded` | 탑승 | 차량 탑승 확인 |
+| `not_boarded` | 미탑승 | 해당 운행에 탑승하지 않음 |
 
-- 호차 계정 로그인
-- 로그인 유지
-- 오늘 날짜 기준 시간대 목록 표시
-- 시간대별 탑승 예정 원생 목록 표시
-- 원생별 탑승 장소 표시
-- 원생별 상태 변경
-  - `unchecked` / 미확인
-  - `boarded` / 탑승
-  - `not_boarded` / 미탑승
-- 저장 전 확인 모달
-- 전체 저장
-- 서버 DB 저장
-- 저장 후 문자 발송 요청 생성
-- 임시 탑승 원생 추가
+- 개별 상태 버튼을 누르는 것만으로는 문자가 발송되지 않습니다.
+- 기사님이 전체 저장을 완료한 뒤 `탑승` 원생에 대해서만 SMS 처리가 시작됩니다.
+- `미탑승`, `미확인` 상태에는 문자를 발송하지 않습니다.
+- 데이터베이스가 운영 데이터의 기준이며 Excel은 조회, 백업, 가져오기 검증 용도로 사용합니다.
 
-### 관리자용 PC 웹 대시보드
+## 시스템 구성
 
-- 관리자 로그인
-- 차량 관리
-- 기사님 계정 관리
-- 시간대 및 운행 일정 관리
-- 원생 정보 관리
-- 원생별 탑승 장소 관리
-- 학부모 연락처 관리
-- 날짜별 출결 기록 조회
-- 문자 발송 기록 조회
-- 엑셀형 명단 관리 UI
-- 엑셀 가져오기
-- 엑셀 내보내기
-- 문자 발송 설정 관리
+- Frontend: 정적 HTML, CSS, JavaScript
+- Backend: Node.js, Express
+- Database: PostgreSQL
+- Web server: nginx
+- SMS: mock provider 또는 SOLAPI
+- Deployment: Docker 기반 로컬 환경 및 Synology NAS 운영 환경
 
-## 4. 기술 방향
-
-### Frontend
-
-- Next.js 또는 React 기반 웹앱
-- TypeScript 사용 권장
-- 기사님 화면은 모바일 세로 화면 중심의 PWA
-- 관리자 화면은 PC 브라우저 중심의 대시보드
-- 서린태권도 로고와 네이비 계열 색상을 활용한 단순하고 명확한 UI
-
-### Backend
-
-- Synology NAS 기반 서버 운영
-- Next.js API Routes 또는 Node.js/Express 사용 권장
-- 사용자 인증 및 세션 유지
-- 기사님 계정과 차량 매핑
-- 출결 기록 저장
-- SMS API 연동
-- 엑셀 가져오기/내보내기 처리
-
-### Database
-
-DB는 시스템의 실제 원본 데이터 저장소입니다.
-
-- 사용자 계정
-- 차량 정보
-- 시간대 및 운행 일정
-- 원생 정보
-- 탑승 장소
-- 학부모 연락처
-- 출결 기록
-- 문자 발송 기록
-- 시스템 설정
-
-엑셀은 기존 명단 가져오기, 기록 내보내기, 백업, 오프라인 검토 용도로만 사용합니다.
-
-## 5. 디자인 원칙
-
-- 40~50대 기사님도 쉽게 사용할 수 있는 직관적인 화면
-- 작은 버튼보다 큰 버튼 중심
-- 한 화면에 너무 많은 기능을 넣지 않음
-- 핵심 동작은 `탑승`, `미탑승`, `전체 저장`에 집중
-- 색상과 텍스트를 함께 사용해 상태를 명확히 표시
-- 기사님 화면에는 관리자용 편집 기능을 노출하지 않음
-- 관리자 화면은 엑셀처럼 익숙하게 보이되 실제 저장은 DB에 수행
-
-## 6. MVP 범위
-
-- 등원 차량 탑승 출결만 관리
-- 기사님 로그인
-- 로그인 유지
-- 호차별 원생 목록 조회
-- 시간대별 원생 목록 조회
-- 원생별 탑승 장소 표시
-- 출결 상태 관리
-  - `unchecked` / 미확인
-  - `boarded` / 탑승
-  - `not_boarded` / 미탑승
-- 기본 상태는 `unchecked`
-- 기사님이 상태 변경 후 `전체 저장`
-- 서버가 출결 기록을 DB에 저장
-- 전체 저장 후 문자 발송 요청 생성
-- `boarded` 상태는 기본 문자 발송 대상
-- `not_boarded` 상태 문자는 관리자 옵션으로만 발송 가능
-- 관리자 원생, 차량, 시간대, 탑승 장소, 연락처 관리
-- 날짜별 출결 기록 조회
-- 엑셀 가져오기/내보내기
-- 임시 탑승 원생 추가
-
-## 7. 제외 범위
-
-MVP에서는 다음 기능을 구현하지 않습니다.
-
-- 하원 차량 관리
-- 귀가 차량 관리
-- 학부모용 앱
-- 실시간 GPS 추적
-- 결제 관리
-- 태권도 띠 또는 수련 단계 관리
-- 상담 기록 관리
-- CloudKit Sharing
-- Core Data migration
-- Native iOS/Android 앱 구현
-- 운영용 SMS 제공업체 확정 및 실제 계약 설정
-- 기사님용 전체 원생/연락처/시간표 편집 기능
-
-## 8. 문서 구조
-
-```txt
-seolin-safecheck/
-├── README.md
-└── docs/
-    ├── PRD.md
-    ├── ARCHITECTURE.md
-    └── CODE_RULES.md
+```text
+Browser
+  |
+  v
+nginx (static frontend)
+  |
+  +-- /api/* --> Express backend
+                    |
+                    +-- PostgreSQL
+                    +-- SMS provider
 ```
 
-- `README.md`: 프로젝트 개요와 현재 기준
-- `docs/PRD.md`: 제품 요구사항과 MVP 범위
-- `docs/ARCHITECTURE.md`: 시스템 구조, 데이터 흐름, API 초안
-- `docs/CODE_RULES.md`: 구현 시 따라야 할 코드 및 작업 규칙
+## 주요 접속 경로
 
-## 9. 현재 프로젝트 상태
+- 기사님 로그인: `/driver/login/index.html`
+- 관리자 로그인: `/admin/login/index.html`
+- 관리자 시간표: `/admin/schedules/index.html`
+- 관리자 출결 기록: `/admin/attendance/index.html`
+- 서버 상태 확인: `/api/health`
 
-현재 단계는 **초기 기획 및 문서화 단계**입니다. 이 작업에서는 앱 기능을 구현하지 않고, 향후 Codex 개발 작업의 기준이 될 문서만 작성합니다.
+운영 환경에서는 nginx가 정적 파일을 제공하고 같은 도메인의 `/api` 요청을 백엔드로 전달합니다.
 
-현재 완료된 항목:
+## 프로젝트 구조
 
-- GitHub 저장소 연결
-- 초기 문서 구조 생성
-- 제품 요구사항 정리
-- 아키텍처 초안 정리
-- 코드 규칙 정리
-- 기사님용 정적 MVP 화면 구현
-- 백엔드 mock API 기반 준비
-- PostgreSQL 로컬 DB 스키마, seed, driver API DB 연동 준비
-- 기사님용 정적 프론트엔드와 driver API 연동
-- 관리자 인증/권한 기반과 초기 read-only admin API 준비
-- 관리자 로그인, 기본 레이아웃, 원생 관리 MVP 정적 화면 구현
-- 관리자 차량 관리, 시간표 관리, 시간표별 원생 배정 MVP 구현
-- 관리자 출결 기록 조회 화면 구현
-
-## 10. 추천 다음 단계
-
-1. 로컬 또는 Docker PostgreSQL 환경에서 schema/seed 적용 검증
-2. 개발/운영 API base URL 설정 방식 확정
-3. 운영용 인증 방식 결정
-4. 관리자 Excel/SMS 준비 범위 확정
-5. 운영용 인증 방식 보강
-6. 개발 환경에서는 SMS mock provider를 먼저 사용
-
-로컬 관리자 화면:
-
-```txt
-admin/login/index.html
-admin/vehicles/index.html
-admin/schedules/index.html
-admin/attendance/index.html
+```text
+.
+├── admin/                     # 관리자 화면
+├── driver/                    # 기사님 화면
+├── assets/                    # 이미지 등 정적 자산
+├── src/                       # 공통 프론트엔드 스크립트와 스타일
+├── server/                    # Express API와 PostgreSQL 연동
+│   ├── src/db/schema.sql
+│   ├── src/db/seed.sql
+│   └── package.json
+├── nginx/                     # 운영 nginx 설정
+├── docker-compose.yml         # 로컬 개발 환경
+├── docker-compose.prod.yml    # NAS 운영 환경 참고 구성
+└── docs/                      # 제품 및 개발 문서
 ```
 
-## 11. 로컬 개발 DB 초기화
+## 로컬 실행
 
-12.2 단계부터 시간표는 요일별 구조를 사용하므로 개발 DB의 `route_schedules` 테이블에 `day_of_week` 컬럼이 필요합니다. 기존 로컬 DB에서 관리자 시간표 또는 기사님 시간표 API가 서버 오류를 내면 개발 DB를 다시 초기화합니다.
+### Docker로 실행
+
+```bash
+docker compose up -d
+```
+
+기본 접속 주소:
+
+- API: `http://localhost:3000`
+- PostgreSQL: `localhost:5432`
+
+로컬 Docker 설정에는 개발 전용 예시 계정이 포함되어 있습니다. 운영 환경에서는 반드시 별도 비밀번호를 사용해야 합니다.
+
+### 백엔드만 실행
+
+```bash
+cd server
+cp .env.example .env
+npm install
+npm start
+```
+
+프론트엔드는 정적 파일 서버를 사용해 프로젝트 루트를 열면 됩니다. 로컬 개발 CORS 기본값은 `http://localhost:5500`입니다.
+
+## 개발 데이터베이스 초기화
+
+로컬 개발 DB를 스키마와 안전한 예시 데이터로 다시 구성하려면 다음 명령을 사용합니다.
 
 ```bash
 cd server
 export DATABASE_URL=postgres://seolin_user:seolin_password@localhost:5432/seolin_safecheck
 npm run db:reset:dev
-npm run dev
 ```
 
-Docker Compose의 기존 PostgreSQL 볼륨이 오래된 스키마를 유지하고 있다면 개발 환경에서만 아래 명령으로 볼륨을 지운 뒤 다시 띄울 수 있습니다. `docker compose down -v`는 로컬 개발 DB 데이터를 삭제합니다.
+`db:reset:dev`는 대상 DB 데이터를 삭제한 뒤 `schema.sql`과 `seed.sql`을 다시 적용하는 개발 전용 명령입니다. 운영 DB에서는 실행하지 마세요.
+
+Docker 개발 볼륨까지 삭제해야 하는 경우:
 
 ```bash
 docker compose down -v
 docker compose up -d
 ```
 
-## 12. SMS Provider 설정
+`docker compose down -v`는 로컬 PostgreSQL 데이터를 모두 삭제합니다.
 
-기본값은 실제 문자를 보내지 않는 mock provider입니다. SOLAPI 실제 테스트는 환경변수로 명시적으로 켜야 하며, test mode에서는 모든 수신번호가 `SMS_TEST_TO`로 대체됩니다.
+## SMS 설정
 
-```txt
+기본 설정은 실제 문자를 보내지 않는 안전 모드입니다.
+
+```env
 SMS_PROVIDER=mock
 SMS_REAL_SEND_ENABLED=false
 SMS_TEST_MODE=true
@@ -244,4 +155,47 @@ SOLAPI_API_SECRET=
 SOLAPI_SENDER_NUMBER=
 ```
 
-실제 API Key, API Secret, 실제 전화번호는 `.env`에만 넣고 저장소에 커밋하지 않습니다.
+- 실제 키와 전화번호는 `server/.env` 또는 NAS 컨테이너 환경 변수에만 입력합니다.
+- `.env` 파일과 실제 비밀값은 Git에 커밋하지 않습니다.
+- SOLAPI 테스트 시 `SMS_TEST_MODE=true`와 테스트 수신번호를 사용합니다.
+- 운영 전환 전 발신번호 등록, API 키 제한, 수신번호 처리 정책을 다시 확인해야 합니다.
+
+## NAS 운영
+
+Synology NAS에서는 다음 컨테이너 구성을 사용합니다.
+
+- PostgreSQL DB
+- Node.js 백엔드
+- nginx 프론트엔드 및 `/api` 프록시
+
+실제 NAS 설치, 빈 운영 DB 초기화, 리버스 프록시, HTTPS, 백업 절차는 [NAS 배포 문서](docs/NAS_DEPLOYMENT.md)를 따릅니다.
+
+운영 DB 볼륨은 임의로 삭제하지 않으며, `docker compose down -v` 같은 데이터 삭제 명령을 운영 환경에서 사용하지 않습니다.
+
+## 운영 범위
+
+현재 시스템은 서린태권도 등원 차량 탑승 출결을 중심으로 제공합니다.
+
+다음 기능은 포함하지 않습니다.
+
+- 하원 차량 출결
+- 학부모 전용 앱
+- GPS 실시간 위치 추적
+- 결제 관리
+- 영구 삭제 기반 원생·시간표 관리
+- CloudKit Sharing 또는 Core Data 마이그레이션
+
+## 문서
+
+- [제품 요구사항](docs/PRD.md)
+- [아키텍처](docs/ARCHITECTURE.md)
+- [코드 규칙](docs/CODE_RULES.md)
+- [API 계약](docs/API_CONTRACT.md)
+- [NAS 배포](docs/NAS_DEPLOYMENT.md)
+
+## 보안 원칙
+
+- 실제 `.env`, API 키, 비밀번호, 전화번호를 저장소에 커밋하지 않습니다.
+- 실제 원생·학부모 개인정보를 seed 데이터나 예제 문서에 넣지 않습니다.
+- DB 덤프, 백업, 업로드 Excel, 내보낸 Excel, SMS 로그를 Git으로 관리하지 않습니다.
+- 운영 비밀번호와 SOLAPI 설정은 NAS 환경 변수에서 별도로 관리합니다.
