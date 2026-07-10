@@ -1,5 +1,15 @@
 # Seolin SafeCheck
 
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=111111)
+![Node.js](https://img.shields.io/badge/Node.js-5FA04E?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-111111?style=for-the-badge&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![nginx](https://img.shields.io/badge/nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
+![SOLAPI](https://img.shields.io/badge/SOLAPI-SMS-5B5FC7?style=for-the-badge)
+
 **Seolin SafeCheck**는 서린태권도 등원 차량 기사님이 원생의 차량 탑승 여부를 쉽고 빠르게 기록하고, 그 결과를 관리자 대시보드, 데이터베이스 기록, 엑셀 내보내기, 학부모 문자 알림으로 연결하는 스마트 차량 출결 관리 시스템입니다. 첫 구현 목표는 기사님용 모바일 웹앱/PWA와 관리자용 PC 웹 대시보드입니다.
 
 ## 1. 프로젝트 목적
