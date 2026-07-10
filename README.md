@@ -1,5 +1,15 @@
 # Seolin SafeCheck
 
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=111111)
+![Node.js](https://img.shields.io/badge/Node.js-5FA04E?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-111111?style=for-the-badge&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![nginx](https://img.shields.io/badge/nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
+![SOLAPI](https://img.shields.io/badge/SOLAPI-SMS-5B5FC7?style=for-the-badge)
+
 Seolin SafeCheck는 서린태권도의 등원 차량 운행과 원생 탑승 출결을 관리하는 웹 시스템입니다.
 
 기사님은 차량별 당일 시간표와 원생 목록을 확인하고 탑승 상태를 저장할 수 있습니다. 관리자는 원생, 차량, 요일별 시간표, 원생 배정과 출결 기록을 한곳에서 관리할 수 있습니다.
