@@ -94,7 +94,7 @@ Seolin SafeCheck는 기사님이 모바일에서 원생별 상태를 `탑승` �
 
 ### Backend
 
-- Synology NAS 기반 서버 운영
+- Synology NAS 기반 서버 운영 (진행중)
 - Next.js API Routes 또는 Node.js/Express 사용 권장
 - 사용자 인증 및 세션 유지
 - 기사님 계정과 차량 매핑
