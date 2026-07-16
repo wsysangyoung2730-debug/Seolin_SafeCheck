@@ -147,3 +147,6 @@ seolin-safecheck/
 
 
 실제 API Key, API Secret, 실제 전화번호는 `.env`에만 넣고 저장소에 커밋하지 않습니다.
+
+## 7. 파일 구조
+** 현재 개편중 **
