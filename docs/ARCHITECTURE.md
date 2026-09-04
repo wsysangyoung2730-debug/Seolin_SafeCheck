@@ -1,5 +1,7 @@
 # Seolin SafeCheck Architecture
 
+> 현재 버전에서는 기사님 화면의 문자 아이콘이 `sms:` 링크로 기기 문자 작성 화면만 열며, 출결 저장 서비스와 SMS provider는 연결되어 있지 않습니다. 아래 자동 SMS 흐름은 향후 재도입을 위한 목표 설계입니다.
+
 ## 1. 아키텍처 개요
 
 Seolin SafeCheck는 기사님용 모바일 웹앱/PWA, 관리자용 PC 웹 대시보드, Synology NAS 기반 백엔드 서버, 데이터베이스, SMS API 연동 모듈로 구성됩니다.

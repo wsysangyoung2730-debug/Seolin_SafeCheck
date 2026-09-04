@@ -1,5 +1,7 @@
 # Seolin SafeCheck NAS Deployment Guide
 
+> 현재 버전은 출결 저장 서비스와 SMS provider가 연결되어 있지 않아 탑승 정보를 자동 발송하지 않습니다. 이 문서의 SMS 운영 설정은 자동 발송 기능을 별도 승인 후 다시 도입할 때만 적용합니다.
+
 ## 1. 목적
 
 이 문서는 Seolin SafeCheck를 Synology NAS의 Docker UI 또는 Docker Compose로 실행하기 위한 배포 준비 가이드입니다. 실제 NAS 배포, 도메인 등록, 인증서 발급, 운영 계정 생성은 이 작업에 포함하지 않습니다.

@@ -4,7 +4,7 @@
 
 이 문서는 Seolin SafeCheck MVP의 백엔드 API 계약을 정의합니다. 현재 단계의 목적은 기사님용 프론트엔드 mock 흐름을 PostgreSQL 기반 백엔드 API로 교체할 수 있도록 요청/응답 형태를 고정하는 것입니다.
 
-이 문서는 API 경로, 공통 응답 형식, 개발용 인증 방식, 기사님용 일정/원생/출결 저장 API, 관리자 API 기반과 원생/차량/시간표/출결 기록 조회 MVP API를 설명합니다. 현재 로컬 백엔드는 PostgreSQL schema/seed와 repository 계층을 사용합니다. **운영용 인증, SMS 발송, Excel 처리는 아직 포함되지 않습니다.**
+이 문서는 API 경로, 공통 응답 형식, 개발용 인증 방식, 기사님용 일정/원생/출결 저장 API, 관리자 API 기반과 원생/차량/시간표/출결 기록 조회 MVP API를 설명합니다. 현재 로컬 백엔드는 PostgreSQL schema/seed와 repository 계층을 사용합니다. **운영용 인증은 아직 포함되지 않으며, 출결 저장에 따른 서버 자동 SMS 발송은 비활성화되어 있습니다.**
 
 ## 2. API 설계 원칙
 
@@ -14,8 +14,9 @@
   - `unchecked`
   - `boarded`
   - `not_boarded`
-- 원생별 상태 버튼 클릭 시에는 저장 또는 SMS 발송을 하지 않습니다.
+- 원생별 상태 버튼 클릭 시에는 서버 저장 또는 자동 SMS 발송을 하지 않습니다.
 - 출결 저장은 `POST /api/driver/attendance/save`에서만 처리합니다.
+- 출결 저장 API는 SMS provider를 호출하지 않습니다.
 - 현재 백엔드의 driver API는 PostgreSQL 데이터를 조회/저장합니다.
 - 기사님용 정적 프론트엔드는 이 API 계약을 기준으로 driver API를 호출합니다.
 - 현재 admin API는 관리자 인증/권한 기반, 조회 API, 원생/차량/시간표 관리 MVP write API, 출결 기록 조회 API를 제공합니다.
@@ -313,7 +314,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 ### GET `/api/driver/schedules/:scheduleId/students`
 
-선택한 시간대의 원생 탑승 목록을 반환합니다.
+선택한 시간대의 원생 탑승 목록을 반환합니다. 기사님 화면의 전화·문자 링크를 위해 해당 시간표에 배정된 원생의 보호자 연락처를 포함합니다.
 
 성공 응답 예시:
 
@@ -330,8 +331,10 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
       {
         "studentId": "student_1330_1",
         "studentName": "김서린",
+        "parentPhone": "01012345678",
         "pickupPlace": "만촌역 앞",
-        "status": "unchecked"
+        "status": "unchecked",
+        "lastSavedAt": null
       }
     ]
   }
@@ -354,7 +357,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 ### POST `/api/driver/attendance/save`
 
-선택한 시간대의 출결 기록을 전체 저장합니다. PostgreSQL `attendance_records`에 insert/update를 수행한 뒤 탑승 상태 원생에 한해 SMS provider 처리를 시도합니다. 기본 provider는 mock입니다.
+선택한 시간대의 출결 기록을 저장합니다. PostgreSQL `attendance_records`에 insert/update만 수행하며 SMS provider는 호출하지 않습니다.
 
 요청 예시:
 
@@ -385,6 +388,13 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
       "boarded": 2,
       "notBoarded": 1,
       "unchecked": 0
+    },
+    "smsSummary": {
+      "total": 0,
+      "sent": 0,
+      "skipped": 0,
+      "failed": 0,
+      "disabled": true
     },
     "isMockSave": false
   }
@@ -453,7 +463,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 ### GET `/api/admin/students`
 
-관리자 원생 목록 화면의 기반이 되는 원생 목록을 반환합니다. 학부모 연락처 원문은 반환하지 않고 등록 여부만 반환합니다.
+관리자 원생 목록과 수정 화면에 필요한 정보를 반환합니다. 관리자 권한에서 보호자 이름과 연락처 원문을 반환하며, 목록 표시용 마스킹 값도 함께 제공합니다.
 
 - Required auth: `admin`
 - Query parameters: 없음
@@ -468,9 +478,12 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
       {
         "studentId": "student_1330_1",
         "studentName": "김서린",
+        "parentName": "김보호",
+        "parentPhone": "01012345678",
+        "parentContactMasked": "010****5678",
         "pickupPlace": "만촌역 앞",
         "isActive": true,
-        "parentContactStatus": "not_registered"
+        "parentContactStatus": "registered"
       }
     ]
   }
@@ -479,7 +492,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 ### POST `/api/admin/students`
 
-관리자가 원생을 추가합니다. 현재 MVP에서는 원생 이름과 기본 탑승 장소만 저장하며 학부모 연락처 원문은 받지 않습니다.
+관리자가 원생과 보호자 연락처를 추가합니다. 보호자 이름과 연락처는 선택 입력이며, 연락처는 숫자만 정규화해 저장합니다.
 
 - Required auth: `admin`
 
@@ -488,6 +501,8 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 ```json
 {
   "studentName": "개발테스트",
+  "parentName": "개발보호자",
+  "parentPhone": "010-1234-5678",
   "pickupPlace": "테스트 장소"
 }
 ```
@@ -501,9 +516,12 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
     "student": {
       "studentId": "student_admin_1770000000000_ab12cd",
       "studentName": "개발테스트",
+      "parentName": "개발보호자",
+      "parentPhone": "01012345678",
+      "parentContactMasked": "010****5678",
       "pickupPlace": "테스트 장소",
       "isActive": true,
-      "parentContactStatus": "not_registered"
+      "parentContactStatus": "registered"
     }
   }
 }
@@ -523,7 +541,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 ### PATCH `/api/admin/students/:studentId`
 
-관리자가 원생 이름, 기본 탑승 장소, 활성 상태를 수정합니다.
+관리자가 원생 이름, 보호자 이름·연락처, 기본 탑승 장소, 활성 상태를 수정합니다.
 
 - Required auth: `admin`
 
@@ -532,6 +550,8 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 ```json
 {
   "studentName": "개발테스트",
+  "parentName": "개발보호자",
+  "parentPhone": "010-9876-5432",
   "pickupPlace": "수정된 테스트 장소",
   "isActive": true
 }
@@ -546,9 +566,12 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
     "student": {
       "studentId": "student_admin_1770000000000_ab12cd",
       "studentName": "개발테스트",
+      "parentName": "개발보호자",
+      "parentPhone": "01098765432",
+      "parentContactMasked": "010****5432",
       "pickupPlace": "수정된 테스트 장소",
       "isActive": true,
-      "parentContactStatus": "not_registered"
+      "parentContactStatus": "registered"
     }
   }
 }
@@ -859,12 +882,11 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 ## 12. SMS API/로그 개요
 
-SMS는 출결 저장 이후 provider를 통해 처리합니다. 기본값은 mock이며, SOLAPI 실제 발송은 환경변수로 명시적으로 활성화해야 합니다.
+서버에는 향후 사용을 위한 SMS provider와 기존 로그 조회 기능이 남아 있습니다. 현재 출결 저장 서비스는 provider를 호출하지 않으므로 아래 환경 변수 값과 관계없이 탑승 정보를 자동 발송하지 않습니다.
 
-- `SMS_PROVIDER=mock`: 실제 발송 없음
-- `SMS_PROVIDER=solapi` 및 `SMS_REAL_SEND_ENABLED=true`: SOLAPI provider 사용
-- `SMS_TEST_MODE=true`: 모든 수신번호를 `SMS_TEST_TO`로 대체
-- 실제 학부모 번호 bulk 발송은 운영 환경에서만 별도 확인 후 사용합니다.
+- 원생 카드의 문자 아이콘은 프론트엔드의 `sms:{parentPhone}` 링크이며 백엔드 SMS API가 아닙니다.
+- 문자 아이콘은 기기의 문자 작성 화면에 수신번호만 전달합니다.
+- 자동 SMS 발송을 다시 도입하려면 출결 저장 서비스와 provider를 다시 연결하는 별도 기능 변경이 필요합니다.
 
 ### GET `/api/admin/sms-logs`
 
@@ -898,6 +920,6 @@ Excel은 DB의 원본 데이터를 가져오거나 내보내는 보조 수단입
 - seed 파일: `server/src/db/seed.sql`
 - seed 데이터는 개발용 가짜 원생/차량/시간대 데이터입니다.
 - 기사님용 프론트엔드는 `src/services/apiClient.js`를 통해 현재 백엔드 API를 호출합니다.
-- SMS는 mock provider와 SOLAPI provider를 지원합니다. 기본값은 mock이며 실제 발송은 `SMS_REAL_SEND_ENABLED=true`일 때만 가능합니다.
+- SMS provider 모듈은 보존되어 있지만 현재 출결 저장 서비스와 연결되어 있지 않습니다.
 - Excel은 출결 기록 내보내기와 import preview 검증만 구현되어 있습니다.
 - 현재 구현된 관리자 API는 개발용 admin 로그인, 권한 확인, overview/students/vehicles/schedules/attendance-records 조회, 원생/차량/시간표 생성/수정/비활성화, 시간표별 원생 배정입니다.
