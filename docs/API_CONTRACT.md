@@ -332,6 +332,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
         "studentId": "student_1330_1",
         "studentName": "김서린",
         "parentPhone": "01012345678",
+        "memo": "멀미 있음 · 앞자리 배정",
         "pickupPlace": "만촌역 앞",
         "status": "unchecked",
         "lastSavedAt": null
@@ -482,6 +483,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
         "parentPhone": "01012345678",
         "parentContactMasked": "010****5678",
         "pickupPlace": "만촌역 앞",
+        "memo": "멀미 있음 · 앞자리 배정",
         "isActive": true,
         "parentContactStatus": "registered"
       }
@@ -492,7 +494,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 ### POST `/api/admin/students`
 
-관리자가 원생과 보호자 연락처를 추가합니다. 보호자 이름과 연락처는 선택 입력이며, 연락처는 숫자만 정규화해 저장합니다.
+관리자가 원생과 보호자 연락처를 추가합니다. 보호자 이름과 연락처는 선택 입력이며, 연락처는 숫자만 정규화해 저장합니다. 기사님 전달 메모는 선택 입력이며 최대 20자입니다.
 
 - Required auth: `admin`
 
@@ -503,7 +505,8 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
   "studentName": "개발테스트",
   "parentName": "개발보호자",
   "parentPhone": "010-1234-5678",
-  "pickupPlace": "테스트 장소"
+  "pickupPlace": "테스트 장소",
+  "memo": "앞자리 배정"
 }
 ```
 
@@ -520,6 +523,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
       "parentPhone": "01012345678",
       "parentContactMasked": "010****5678",
       "pickupPlace": "테스트 장소",
+      "memo": "앞자리 배정",
       "isActive": true,
       "parentContactStatus": "registered"
     }
@@ -553,6 +557,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
   "parentName": "개발보호자",
   "parentPhone": "010-9876-5432",
   "pickupPlace": "수정된 테스트 장소",
+  "memo": "멀미 있음",
   "isActive": true
 }
 ```
@@ -570,6 +575,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
       "parentPhone": "01098765432",
       "parentContactMasked": "010****5432",
       "pickupPlace": "수정된 테스트 장소",
+      "memo": "멀미 있음",
       "isActive": true,
       "parentContactStatus": "registered"
     }

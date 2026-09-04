@@ -200,9 +200,21 @@ function createStudentCard(record) {
   const header = document.createElement("div");
   header.className = "student-card__header";
 
+  const identity = document.createElement("div");
+  identity.className = "student-card__identity";
+
   const name = document.createElement("h3");
   name.textContent = record.studentName;
   name.title = record.studentName;
+  identity.append(name);
+
+  if (record.memo) {
+    const memo = document.createElement("p");
+    memo.className = "student-card__memo";
+    memo.textContent = record.memo;
+    memo.title = record.memo;
+    identity.append(memo);
+  }
 
   const contactActions = document.createElement("div");
   contactActions.className = "contact-actions";
@@ -224,7 +236,7 @@ function createStudentCard(record) {
     updateRecordStatus(record.studentId);
   });
 
-  header.append(name, contactActions);
+  header.append(identity, contactActions);
   card.append(header, statusButton);
   return card;
 }

@@ -57,6 +57,7 @@ async function findAdminStudents() {
         parent_name,
         default_pickup_place,
         parent_phone,
+        memo,
         is_active
       from students
       order by is_active desc, name asc
@@ -69,6 +70,7 @@ async function findAdminStudents() {
     parentName: row.parent_name || "",
     parentPhone: row.parent_phone || "",
     pickupPlace: row.default_pickup_place,
+    memo: row.memo || "",
     isActive: row.is_active,
     parentContactStatus: row.parent_phone ? "registered" : "not_registered",
     parentContactMasked: maskPhoneNumber(row.parent_phone),
@@ -80,6 +82,7 @@ async function createAdminStudent({
   parentName,
   parentPhone,
   pickupPlace,
+  memo,
 }) {
   const randomSuffix = Math.random().toString(36).slice(2, 8);
   const studentId = `student_admin_${Date.now()}_${randomSuffix}`;
@@ -96,7 +99,7 @@ async function createAdminStudent({
         created_at,
         updated_at
       ) values (
-        $1, $2, $3, $4, $5, null, true, now(), now()
+        $1, $2, $3, $4, $5, $6, true, now(), now()
       )
       returning
         id,
@@ -104,9 +107,10 @@ async function createAdminStudent({
         parent_name,
         parent_phone,
         default_pickup_place,
+        memo,
         is_active
     `,
-    [studentId, studentName, parentName || null, parentPhone || null, pickupPlace],
+    [studentId, studentName, parentName || null, parentPhone || null, pickupPlace, memo || null],
   );
 
   const row = result.rows[0];
@@ -117,6 +121,7 @@ async function createAdminStudent({
     parentName: row.parent_name || "",
     parentPhone: row.parent_phone || "",
     pickupPlace: row.default_pickup_place,
+    memo: row.memo || "",
     isActive: row.is_active,
     parentContactStatus: row.parent_phone ? "registered" : "not_registered",
     parentContactMasked: maskPhoneNumber(row.parent_phone),
@@ -129,6 +134,7 @@ async function updateAdminStudent({
   parentName,
   parentPhone,
   pickupPlace,
+  memo,
   isActive,
 }) {
   const result = await pool.query(
@@ -139,7 +145,8 @@ async function updateAdminStudent({
         parent_name = $3,
         parent_phone = $4,
         default_pickup_place = $5,
-        is_active = $6,
+        memo = $6,
+        is_active = $7,
         updated_at = now()
       where id = $1
       returning
@@ -148,6 +155,7 @@ async function updateAdminStudent({
         parent_name,
         parent_phone,
         default_pickup_place,
+        memo,
         is_active
     `,
     [
@@ -156,6 +164,7 @@ async function updateAdminStudent({
       parentName || null,
       parentPhone || null,
       pickupPlace,
+      memo || null,
       isActive,
     ],
   );
@@ -172,6 +181,7 @@ async function updateAdminStudent({
     parentName: row.parent_name || "",
     parentPhone: row.parent_phone || "",
     pickupPlace: row.default_pickup_place,
+    memo: row.memo || "",
     isActive: row.is_active,
     parentContactStatus: row.parent_phone ? "registered" : "not_registered",
     parentContactMasked: maskPhoneNumber(row.parent_phone),
@@ -192,6 +202,7 @@ async function deactivateAdminStudent(studentId) {
         parent_name,
         parent_phone,
         default_pickup_place,
+        memo,
         is_active
     `,
     [studentId],
@@ -209,6 +220,7 @@ async function deactivateAdminStudent(studentId) {
     parentName: row.parent_name || "",
     parentPhone: row.parent_phone || "",
     pickupPlace: row.default_pickup_place,
+    memo: row.memo || "",
     isActive: row.is_active,
     parentContactStatus: row.parent_phone ? "registered" : "not_registered",
     parentContactMasked: maskPhoneNumber(row.parent_phone),

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>원생 관리 | Seolin SafeCheck</title>
-    <link rel="stylesheet" href="../../src/styles/admin.css?v=guardian-contact-2">
+    <link rel="stylesheet" href="../../src/styles/admin.css?v=student-memo-1">
   </head>
   <body>
     <div class="admin-shell">
@@ -91,6 +91,21 @@
           <input id="pickup-place" name="pickupPlace" type="text" autocomplete="off">
         </label>
 
+        <label class="field">
+          <span class="field-label-row">
+            <span>기사님 전달 메모</span>
+            <span id="memo-count" class="character-count">0/20자</span>
+          </span>
+          <input
+            id="student-memo"
+            name="memo"
+            type="text"
+            maxlength="20"
+            autocomplete="off"
+            placeholder="예: 멀미 있음 · 앞자리 배정"
+          >
+        </label>
+
         <fieldset class="form-section">
           <legend>보호자 연락처</legend>
           <p id="parent-contact-helper" class="form-section__helper">
@@ -139,6 +154,6 @@
       </form>
     </dialog>
 
-    <script type="module" src="../../src/app/admin/students.js?v=guardian-contact-2"></script>
+    <script type="module" src="../../src/app/admin/students.js?v=student-memo-1"></script>
   </body>
 </html>

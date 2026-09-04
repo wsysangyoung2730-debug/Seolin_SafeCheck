@@ -3,7 +3,7 @@ import {
   deactivateAdminStudent,
   getAdminStudents,
   updateAdminStudent,
-} from "../../services/adminApi.js?v=guardian-contact-2";
+} from "../../services/adminApi.js?v=student-memo-1";
 import { ApiClientError } from "../../services/apiClient.js";
 import { bindPlannedNavigation, requireAdminSession } from "./layout.js";
 
@@ -17,6 +17,8 @@ const dialogTitle = document.querySelector("#student-dialog-title");
 const studentIdInput = document.querySelector("#student-id");
 const studentNameInput = document.querySelector("#student-name");
 const pickupPlaceInput = document.querySelector("#pickup-place");
+const memoInput = document.querySelector("#student-memo");
+const memoCount = document.querySelector("#memo-count");
 const parentNameInput = document.querySelector("#parent-name");
 const parentPhoneInput = document.querySelector("#parent-phone");
 const isActiveInput = document.querySelector("#is-active");
@@ -30,6 +32,7 @@ const confirmDeactivateButton = document.querySelector("#confirm-deactivate-butt
 let students = [];
 let isSaving = false;
 let pendingDeactivateStudent = null;
+const STUDENT_MEMO_MAX_LENGTH = 20;
 
 function setMessage(text, type = "info") {
   studentMessage.textContent = text;
@@ -65,6 +68,16 @@ function renderStatusBadge(student) {
   return badge;
 }
 
+function updateMemoCount() {
+  const characters = Array.from(memoInput.value);
+
+  if (characters.length > STUDENT_MEMO_MAX_LENGTH) {
+    memoInput.value = characters.slice(0, STUDENT_MEMO_MAX_LENGTH).join("");
+  }
+
+  memoCount.textContent = `${Array.from(memoInput.value).length}/${STUDENT_MEMO_MAX_LENGTH}자`;
+}
+
 function renderStudents() {
   const visibleStudents = getVisibleStudents();
   studentTableBody.replaceChildren();
@@ -87,7 +100,21 @@ function renderStudents() {
     row.className = student.isActive ? "" : "is-inactive";
 
     const nameCell = document.createElement("td");
-    nameCell.textContent = student.studentName;
+    const nameContent = document.createElement("div");
+    const studentName = document.createElement("strong");
+
+    nameContent.className = "student-name-cell";
+    studentName.textContent = student.studentName;
+    nameContent.append(studentName);
+
+    if (student.memo) {
+      const memo = document.createElement("span");
+      memo.textContent = student.memo;
+      memo.title = student.memo;
+      nameContent.append(memo);
+    }
+
+    nameCell.append(nameContent);
 
     const pickupCell = document.createElement("td");
     pickupCell.textContent = student.pickupPlace;
@@ -148,11 +175,13 @@ function openStudentDialog(student = null, { focusContact = false } = {}) {
   studentIdInput.value = student?.studentId || "";
   studentNameInput.value = student?.studentName || "";
   pickupPlaceInput.value = student?.pickupPlace || "";
+  memoInput.value = student?.memo || "";
   parentNameInput.value = student?.parentName || "";
   parentPhoneInput.value = student?.parentPhone || "";
   isActiveInput.checked = student ? student.isActive : true;
   dialogTitle.textContent = student ? "원생 정보 수정" : "원생 추가";
   saveButton.textContent = student ? "수정 저장" : "원생 추가";
+  updateMemoCount();
   dialog.showModal();
   (focusContact ? parentPhoneInput : studentNameInput).focus();
 }
@@ -166,6 +195,7 @@ function getFormValues() {
     studentId: studentIdInput.value,
     studentName: studentNameInput.value.trim(),
     pickupPlace: pickupPlaceInput.value.trim(),
+    memo: memoInput.value.trim(),
     parentName: parentNameInput.value.trim(),
     parentPhone: parentPhoneInput.value.trim(),
     isActive: isActiveInput.checked,
@@ -190,6 +220,12 @@ function validateForm(values) {
   if (parentPhone && !/^0\d{8,10}$/.test(parentPhone)) {
     setMessage("보호자 연락처를 올바르게 입력해주세요.", "error");
     parentPhoneInput.focus();
+    return false;
+  }
+
+  if (Array.from(values.memo).length > STUDENT_MEMO_MAX_LENGTH) {
+    setMessage(`원생 메모는 ${STUDENT_MEMO_MAX_LENGTH}자 이내로 입력해주세요.`, "error");
+    memoInput.focus();
     return false;
   }
 
@@ -313,6 +349,7 @@ async function initializeStudents() {
   });
   confirmDeactivateButton.addEventListener("click", confirmDeactivate);
   form.addEventListener("submit", handleSave);
+  memoInput.addEventListener("input", updateMemoCount);
   searchInput.addEventListener("input", renderStudents);
 
   await loadStudents();

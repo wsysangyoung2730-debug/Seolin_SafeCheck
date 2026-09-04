@@ -7,6 +7,7 @@ async function findStudentsByScheduleId(scheduleId, date) {
         students.id as student_id,
         students.name as student_name,
         students.parent_phone,
+        students.memo,
         coalesce(
           route_schedule_students.pickup_place_override,
           students.default_pickup_place
@@ -32,6 +33,7 @@ async function findStudentsByScheduleId(scheduleId, date) {
     studentId: row.student_id,
     studentName: row.student_name,
     parentPhone: row.parent_phone || "",
+    memo: row.memo || "",
     pickupPlace: row.pickup_place,
     status: row.status,
     lastSavedAt: row.last_saved_at,

@@ -482,12 +482,30 @@ a {
   min-width: 0;
 }
 
+.student-card__identity {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .student-card__header h3 {
   min-width: 0;
   margin: 0;
   overflow: hidden;
   font-size: 21px;
   line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-card__memo {
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

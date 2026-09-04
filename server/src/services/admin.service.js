@@ -40,12 +40,14 @@ const VALID_DAYS_OF_WEEK = new Set([
   "saturday",
   "sunday",
 ]);
+const STUDENT_MEMO_MAX_LENGTH = 20;
 
 function normalizeStudentInput({
   studentName,
   parentName,
   parentPhone,
   pickupPlace,
+  memo,
   isActive,
 }) {
   return {
@@ -53,6 +55,7 @@ function normalizeStudentInput({
     parentName: typeof parentName === "string" ? parentName.trim() : "",
     parentPhone: normalizePhoneNumber(parentPhone),
     pickupPlace: typeof pickupPlace === "string" ? pickupPlace.trim() : "",
+    memo: typeof memo === "string" ? memo.trim() : "",
     isActive: typeof isActive === "boolean" ? isActive : true,
   };
 }
@@ -68,6 +71,10 @@ function validateStudentInput(student) {
 
   if (student.parentPhone && !/^0\d{8,10}$/.test(student.parentPhone)) {
     return "보호자 연락처를 올바르게 입력해주세요.";
+  }
+
+  if (Array.from(student.memo).length > STUDENT_MEMO_MAX_LENGTH) {
+    return `원생 메모는 ${STUDENT_MEMO_MAX_LENGTH}자 이내로 입력해주세요.`;
   }
 
   return "";

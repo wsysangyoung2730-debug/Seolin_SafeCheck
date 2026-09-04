@@ -19,6 +19,7 @@ export async function createAdminStudent({
   parentName,
   parentPhone,
   pickupPlace,
+  memo,
 }) {
   return apiPost(
     "/api/admin/students",
@@ -27,6 +28,7 @@ export async function createAdminStudent({
       parentName,
       parentPhone,
       pickupPlace,
+      memo,
     },
     ADMIN_AUTH_OPTIONS,
   );
@@ -38,6 +40,7 @@ export async function updateAdminStudent({
   parentName,
   parentPhone,
   pickupPlace,
+  memo,
   isActive,
 }) {
   return apiPatch(
@@ -47,6 +50,7 @@ export async function updateAdminStudent({
       parentName,
       parentPhone,
       pickupPlace,
+      memo,
       isActive,
     },
     ADMIN_AUTH_OPTIONS,

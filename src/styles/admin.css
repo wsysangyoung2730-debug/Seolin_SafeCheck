@@ -125,6 +125,19 @@ a {
   outline: 3px solid rgba(31, 43, 123, 0.16);
 }
 
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.character-count {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 750;
+}
+
 .primary-button,
 .secondary-button,
 .ghost-button,
@@ -434,6 +447,20 @@ a {
   color: var(--text-secondary);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
+}
+
+.student-name-cell {
+  display: grid;
+  gap: 4px;
+  max-width: 220px;
+}
+
+.student-name-cell span {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table-actions {
