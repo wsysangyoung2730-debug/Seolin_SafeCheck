@@ -78,6 +78,21 @@ export async function deleteAdminStudent(studentId) {
   );
 }
 
+export async function getAdminStudentSchedules(studentId) {
+  return apiGet(
+    `/api/admin/students/${encodeURIComponent(studentId)}/schedules`,
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
+export async function updateAdminStudentSchedules({ studentId, scheduleIds }) {
+  return apiPut(
+    `/api/admin/students/${encodeURIComponent(studentId)}/schedules`,
+    { scheduleIds },
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
 export async function getAdminVehicles() {
   return apiGet("/api/admin/vehicles", ADMIN_AUTH_OPTIONS);
 }

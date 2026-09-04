@@ -2,9 +2,12 @@ import {
   createAdminStudent,
   deactivateAdminStudent,
   deleteAdminStudent,
+  getAdminStudentSchedules,
   getAdminStudents,
+  getAdminVehicles,
   updateAdminStudent,
-} from "../../services/adminApi.js?v=permanent-delete-1";
+  updateAdminStudentSchedules,
+} from "../../services/adminApi.js?v=student-boarding-1";
 import { ApiClientError } from "../../services/apiClient.js";
 import { createTrashButton } from "./deleteAction.js?v=permanent-delete-1";
 import { bindPlannedNavigation, requireAdminSession } from "./layout.js";
@@ -34,12 +37,57 @@ const deleteDialog = document.querySelector("#student-delete-dialog");
 const deleteMessage = document.querySelector("#student-delete-message");
 const cancelDeleteButton = document.querySelector("#cancel-student-delete-button");
 const confirmDeleteButton = document.querySelector("#confirm-student-delete-button");
+const boardingDialog = document.querySelector("#boarding-dialog");
+const boardingForm = document.querySelector("#boarding-form");
+const boardingDialogTitle = document.querySelector("#boarding-dialog-title");
+const closeBoardingButton = document.querySelector("#close-boarding-button");
+const cancelBoardingButton = document.querySelector("#cancel-boarding-button");
+const saveBoardingButton = document.querySelector("#save-boarding-button");
+const boardingDialogMessage = document.querySelector("#boarding-dialog-message");
+const currentBoardingList = document.querySelector("#current-boarding-list");
+const boardingSelectedCount = document.querySelector("#boarding-selected-count");
+const boardingWeekdayButtons = document.querySelector("#boarding-weekday-buttons");
+const boardingVehicleButtons = document.querySelector("#boarding-vehicle-buttons");
+const boardingScheduleList = document.querySelector("#boarding-schedule-list");
 
 let students = [];
 let isSaving = false;
 let pendingDeactivateStudent = null;
 let pendingDeleteStudent = null;
+let selectedBoardingStudent = null;
+let boardingSchedules = [];
+let boardingVehicles = [];
+let selectedBoardingScheduleIds = new Set();
+let selectedBoardingDay = getTodayDayOfWeek();
+let selectedBoardingVehicleId = "";
+let focusedBoardingScheduleId = "";
+let isBoardingSaving = false;
 const STUDENT_MEMO_MAX_LENGTH = 20;
+const WEEKDAYS = [
+  { value: "monday", label: "월" },
+  { value: "tuesday", label: "화" },
+  { value: "wednesday", label: "수" },
+  { value: "thursday", label: "목" },
+  { value: "friday", label: "금" },
+  { value: "saturday", label: "토" },
+  { value: "sunday", label: "일" },
+];
+
+function getTodayDayOfWeek() {
+  return [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ][new Date().getDay()];
+}
+
+function getDayLabel(dayOfWeek) {
+  return WEEKDAYS.find((weekday) => weekday.value === dayOfWeek)?.label || "";
+}
 
 function setMessage(text, type = "info") {
   studentMessage.textContent = text;
@@ -146,7 +194,24 @@ function renderStudents() {
     nameCell.append(nameContent);
 
     const pickupCell = document.createElement("td");
-    pickupCell.textContent = student.pickupPlace;
+    const boardingSummary = document.createElement("div");
+    const pickupPlace = document.createElement("strong");
+    const boardingButton = document.createElement("button");
+
+    boardingSummary.className = "boarding-summary";
+    pickupPlace.textContent = student.pickupPlace;
+    boardingButton.type = "button";
+    boardingButton.className = "boarding-manage-button";
+    boardingButton.textContent = student.assignedScheduleCount > 0
+      ? `시간표 ${student.assignedScheduleCount}개 · 관리`
+      : "미배정 · 관리";
+    boardingButton.setAttribute(
+      "aria-label",
+      `${student.studentName} 원생 탑승 정보 관리`,
+    );
+    boardingButton.addEventListener("click", () => openBoardingDialog(student));
+    boardingSummary.append(pickupPlace, boardingButton);
+    pickupCell.append(boardingSummary);
 
     const contactCell = document.createElement("td");
     const contactSummary = document.createElement("div");
@@ -330,6 +395,300 @@ async function handleSave(event) {
   }
 }
 
+function setBoardingMessage(text, type = "info") {
+  boardingDialogMessage.textContent = text;
+  boardingDialogMessage.dataset.type = type;
+}
+
+function getSelectedBoardingSchedules() {
+  return boardingSchedules.filter((schedule) =>
+    selectedBoardingScheduleIds.has(schedule.scheduleId),
+  );
+}
+
+function renderCurrentBoardingList() {
+  const selectedSchedules = getSelectedBoardingSchedules();
+  currentBoardingList.replaceChildren();
+  boardingSelectedCount.textContent = `${selectedSchedules.length}개 시간표`;
+
+  if (selectedSchedules.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "boarding-empty";
+    empty.textContent = "현재 배정된 차량과 시간표가 없습니다.";
+    currentBoardingList.append(empty);
+    return;
+  }
+
+  selectedSchedules.forEach((schedule) => {
+    const button = document.createElement("button");
+    const time = document.createElement("span");
+    const vehicle = document.createElement("strong");
+    const place = document.createElement("span");
+    const hint = document.createElement("span");
+
+    button.type = "button";
+    button.className = "current-boarding-card";
+    button.setAttribute(
+      "aria-label",
+      `${getDayLabel(schedule.dayOfWeek)}요일 ${schedule.startTime} ${schedule.vehicleName} 시간표로 이동`,
+    );
+    time.className = "current-boarding-card__time";
+    time.textContent = `${getDayLabel(schedule.dayOfWeek)}요일 · ${schedule.startTime} ${schedule.name}`;
+    vehicle.textContent = schedule.vehicleName;
+    place.textContent = `탑승장소 · ${schedule.pickupPlace}`;
+    hint.className = "current-boarding-card__hint";
+    hint.textContent = "이 시간표 보기 →";
+    button.append(time, vehicle, place, hint);
+    button.addEventListener("click", () => moveToBoardingSchedule(schedule));
+    currentBoardingList.append(button);
+  });
+}
+
+function renderBoardingWeekdayButtons() {
+  boardingWeekdayButtons.replaceChildren();
+
+  WEEKDAYS.forEach((weekday) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = weekday.value === selectedBoardingDay
+      ? "selector-button selector-button--selected"
+      : "selector-button";
+    button.textContent = weekday.label;
+    button.setAttribute("aria-pressed", String(weekday.value === selectedBoardingDay));
+    button.addEventListener("click", () => {
+      selectedBoardingDay = weekday.value;
+      focusedBoardingScheduleId = "";
+      renderBoardingWeekdayButtons();
+      renderBoardingScheduleList();
+    });
+    boardingWeekdayButtons.append(button);
+  });
+}
+
+function renderBoardingVehicleButtons() {
+  boardingVehicleButtons.replaceChildren();
+
+  if (boardingVehicles.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "selector-empty";
+    empty.textContent = "등록된 차량이 없습니다.";
+    boardingVehicleButtons.append(empty);
+    return;
+  }
+
+  boardingVehicles.forEach((vehicle) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = vehicle.vehicleId === selectedBoardingVehicleId
+      ? "selector-button selector-button--selected"
+      : "selector-button";
+    button.textContent = vehicle.isActive
+      ? vehicle.vehicleName
+      : `${vehicle.vehicleName} · 비활성`;
+    button.setAttribute(
+      "aria-pressed",
+      String(vehicle.vehicleId === selectedBoardingVehicleId),
+    );
+    button.addEventListener("click", () => {
+      selectedBoardingVehicleId = vehicle.vehicleId;
+      focusedBoardingScheduleId = "";
+      renderBoardingVehicleButtons();
+      renderBoardingScheduleList();
+    });
+    boardingVehicleButtons.append(button);
+  });
+}
+
+function renderBoardingScheduleList() {
+  const visibleSchedules = boardingSchedules.filter((schedule) =>
+    schedule.dayOfWeek === selectedBoardingDay
+      && schedule.vehicleId === selectedBoardingVehicleId,
+  );
+  boardingScheduleList.replaceChildren();
+
+  if (!selectedBoardingVehicleId || visibleSchedules.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "boarding-empty";
+    empty.textContent = selectedBoardingVehicleId
+      ? "선택한 요일과 차량에 등록된 시간표가 없습니다."
+      : "차량을 먼저 선택해주세요.";
+    boardingScheduleList.append(empty);
+    return;
+  }
+
+  visibleSchedules.forEach((schedule) => {
+    const label = document.createElement("label");
+    const checkbox = document.createElement("input");
+    const detail = document.createElement("span");
+    const title = document.createElement("strong");
+    const place = document.createElement("span");
+    const status = document.createElement("span");
+    const isSelected = selectedBoardingScheduleIds.has(schedule.scheduleId);
+
+    label.className = isSelected
+      ? "boarding-schedule-item is-selected"
+      : "boarding-schedule-item";
+    label.dataset.scheduleId = schedule.scheduleId;
+
+    if (schedule.scheduleId === focusedBoardingScheduleId) {
+      label.classList.add("is-focused");
+    }
+
+    checkbox.type = "checkbox";
+    checkbox.checked = isSelected;
+    checkbox.value = schedule.scheduleId;
+    checkbox.setAttribute(
+      "aria-label",
+      `${schedule.startTime} ${schedule.name} 시간표 포함`,
+    );
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) {
+        selectedBoardingScheduleIds.add(schedule.scheduleId);
+        label.classList.add("is-selected");
+      } else {
+        selectedBoardingScheduleIds.delete(schedule.scheduleId);
+        label.classList.remove("is-selected");
+      }
+
+      renderCurrentBoardingList();
+    });
+
+    detail.className = "boarding-schedule-item__detail";
+    title.textContent = `${schedule.startTime} · ${schedule.name}`;
+    place.textContent = `탑승장소 · ${schedule.pickupPlace}`;
+    status.className = schedule.scheduleIsActive
+      ? "badge badge--success"
+      : "badge";
+    status.textContent = schedule.scheduleIsActive ? "활성" : "비활성";
+    detail.append(title, place);
+    label.append(checkbox, detail, status);
+    boardingScheduleList.append(label);
+  });
+}
+
+function moveToBoardingSchedule(schedule) {
+  selectedBoardingDay = schedule.dayOfWeek;
+  selectedBoardingVehicleId = schedule.vehicleId;
+  focusedBoardingScheduleId = schedule.scheduleId;
+  renderBoardingWeekdayButtons();
+  renderBoardingVehicleButtons();
+  renderBoardingScheduleList();
+
+  requestAnimationFrame(() => {
+    const target = Array.from(
+      boardingScheduleList.querySelectorAll("[data-schedule-id]"),
+    ).find((item) => item.dataset.scheduleId === schedule.scheduleId);
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    target?.querySelector("input")?.focus();
+  });
+}
+
+async function openBoardingDialog(student) {
+  selectedBoardingStudent = student;
+  boardingSchedules = [];
+  boardingVehicles = [];
+  selectedBoardingScheduleIds = new Set();
+  selectedBoardingDay = getTodayDayOfWeek();
+  selectedBoardingVehicleId = "";
+  focusedBoardingScheduleId = "";
+  boardingDialogTitle.textContent = `${student.studentName} 탑승 정보 관리`;
+  currentBoardingList.replaceChildren();
+  boardingWeekdayButtons.replaceChildren();
+  boardingVehicleButtons.replaceChildren();
+  boardingScheduleList.replaceChildren();
+  boardingSelectedCount.textContent = "";
+  saveBoardingButton.disabled = true;
+  setBoardingMessage("탑승 정보를 불러오는 중입니다.", "info");
+  boardingDialog.showModal();
+
+  try {
+    const [assignmentData, vehicleData] = await Promise.all([
+      getAdminStudentSchedules(student.studentId),
+      getAdminVehicles(),
+    ]);
+    boardingSchedules = assignmentData.schedules || [];
+    boardingVehicles = vehicleData.vehicles || [];
+    selectedBoardingScheduleIds = new Set(
+      boardingSchedules
+        .filter((schedule) => schedule.isAssigned)
+        .map((schedule) => schedule.scheduleId),
+    );
+
+    const todayAssignedSchedule = boardingSchedules.find((schedule) =>
+      schedule.dayOfWeek === selectedBoardingDay && schedule.isAssigned,
+    );
+    const todaySchedule = boardingSchedules.find((schedule) =>
+      schedule.dayOfWeek === selectedBoardingDay,
+    );
+    selectedBoardingVehicleId = todayAssignedSchedule?.vehicleId
+      || todaySchedule?.vehicleId
+      || boardingVehicles.find((vehicle) => vehicle.isActive)?.vehicleId
+      || boardingVehicles[0]?.vehicleId
+      || "";
+
+    renderCurrentBoardingList();
+    renderBoardingWeekdayButtons();
+    renderBoardingVehicleButtons();
+    renderBoardingScheduleList();
+    setBoardingMessage("체크 상태를 변경한 뒤 저장해주세요.", "info");
+    saveBoardingButton.disabled = false;
+  } catch (error) {
+    setBoardingMessage(
+      error instanceof ApiClientError
+        ? error.message
+        : "탑승 정보를 불러오지 못했습니다.",
+      "error",
+    );
+  }
+}
+
+function closeBoardingDialog() {
+  if (isBoardingSaving) {
+    return;
+  }
+
+  selectedBoardingStudent = null;
+  boardingDialog.close();
+}
+
+async function handleBoardingSave(event) {
+  event.preventDefault();
+
+  if (!selectedBoardingStudent || isBoardingSaving) {
+    return;
+  }
+
+  const student = selectedBoardingStudent;
+  isBoardingSaving = true;
+  saveBoardingButton.disabled = true;
+  closeBoardingButton.disabled = true;
+  cancelBoardingButton.disabled = true;
+  setBoardingMessage("탑승 정보를 저장하는 중입니다.", "info");
+
+  try {
+    await updateAdminStudentSchedules({
+      studentId: student.studentId,
+      scheduleIds: Array.from(selectedBoardingScheduleIds),
+    });
+    selectedBoardingStudent = null;
+    boardingDialog.close();
+    await loadStudents();
+    setMessage(`${student.studentName} 원생의 탑승 정보를 저장했습니다.`, "success");
+  } catch (error) {
+    setBoardingMessage(
+      error instanceof ApiClientError
+        ? error.message
+        : "탑승 정보를 저장하지 못했습니다.",
+      "error",
+    );
+  } finally {
+    isBoardingSaving = false;
+    saveBoardingButton.disabled = false;
+    closeBoardingButton.disabled = false;
+    cancelBoardingButton.disabled = false;
+  }
+}
+
 async function handleDeactivate(student) {
   if (!student.isActive) {
     return;
@@ -420,6 +779,9 @@ async function initializeStudents() {
     deleteDialog.close();
   });
   confirmDeleteButton.addEventListener("click", confirmDelete);
+  closeBoardingButton.addEventListener("click", closeBoardingDialog);
+  cancelBoardingButton.addEventListener("click", closeBoardingDialog);
+  boardingForm.addEventListener("submit", handleBoardingSave);
   form.addEventListener("submit", handleSave);
   memoInput.addEventListener("input", updateMemoCount);
   parentPhoneInput.addEventListener("input", updateParentPhoneFormat);

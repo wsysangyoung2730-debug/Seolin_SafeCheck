@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>원생 관리 | Seolin SafeCheck</title>
-    <link rel="stylesheet" href="../../src/styles/admin.css?v=permanent-delete-1">
+    <link rel="stylesheet" href="../../src/styles/admin.css?v=student-boarding-1">
   </head>
   <body>
     <div class="admin-shell">
@@ -63,7 +63,7 @@
               <thead>
                 <tr>
                   <th scope="col">원생 이름</th>
-                  <th scope="col">탑승 장소</th>
+                  <th scope="col">탑승 정보</th>
                   <th scope="col">보호자 연락처</th>
                   <th scope="col">상태</th>
                   <th scope="col">작업</th>
@@ -145,6 +145,57 @@
       </form>
     </dialog>
 
+    <dialog id="boarding-dialog" class="student-dialog boarding-dialog">
+      <form id="boarding-form" class="form-stack" method="dialog" novalidate>
+        <div class="boarding-dialog__header">
+          <div>
+            <p class="eyebrow">원생별 차량 관리</p>
+            <h2 id="boarding-dialog-title">탑승 정보 관리</h2>
+          </div>
+          <button id="close-boarding-button" class="secondary-button" type="button">닫기</button>
+        </div>
+
+        <section class="boarding-section" aria-labelledby="current-boarding-title">
+          <div class="boarding-section__title">
+            <div>
+              <h3 id="current-boarding-title">현재 탑승 정보</h3>
+              <p>카드를 누르면 아래의 해당 요일·차량 시간표로 이동합니다.</p>
+            </div>
+            <strong id="boarding-selected-count" class="boarding-selected-count"></strong>
+          </div>
+          <div id="current-boarding-list" class="current-boarding-list"></div>
+        </section>
+
+        <section class="boarding-section" aria-labelledby="boarding-schedule-title">
+          <div class="boarding-section__title">
+            <div>
+              <h3 id="boarding-schedule-title">시간표 선택</h3>
+              <p>요일과 차량을 선택하고 포함할 시간표를 체크해주세요.</p>
+            </div>
+          </div>
+
+          <div class="boarding-selector">
+            <div>
+              <span class="selector-label">요일</span>
+              <div id="boarding-weekday-buttons" class="selector-buttons"></div>
+            </div>
+            <div>
+              <span class="selector-label">차량</span>
+              <div id="boarding-vehicle-buttons" class="selector-buttons"></div>
+            </div>
+          </div>
+
+          <div id="boarding-schedule-list" class="boarding-schedule-list"></div>
+        </section>
+
+        <p id="boarding-dialog-message" class="message" role="status" aria-live="polite"></p>
+        <div class="dialog-actions boarding-dialog__actions">
+          <button id="cancel-boarding-button" class="secondary-button" type="button">취소</button>
+          <button id="save-boarding-button" class="primary-button" type="submit">탑승 정보 저장</button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="deactivate-dialog" class="student-dialog">
       <form class="form-stack" method="dialog">
         <h2>원생 미이용</h2>
@@ -167,6 +218,6 @@
       </form>
     </dialog>
 
-    <script type="module" src="../../src/app/admin/students.js?v=permanent-delete-1"></script>
+    <script type="module" src="../../src/app/admin/students.js?v=student-boarding-1"></script>
   </body>
 </html>
