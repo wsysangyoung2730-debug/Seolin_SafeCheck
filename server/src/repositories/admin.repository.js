@@ -227,6 +227,67 @@ async function deactivateAdminStudent(studentId) {
   };
 }
 
+async function deleteAdminStudent(studentId) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("begin");
+    const studentResult = await client.query(
+      `
+        select id, name
+        from students
+        where id = $1
+        for update
+      `,
+      [studentId],
+    );
+    const student = studentResult.rows[0];
+
+    if (!student) {
+      await client.query("rollback");
+      return null;
+    }
+
+    const smsResult = await client.query(
+      `
+        delete from sms_logs
+        where student_id = $1
+          or attendance_record_id in (
+            select id
+            from attendance_records
+            where student_id = $1
+          )
+      `,
+      [studentId],
+    );
+    const attendanceResult = await client.query(
+      "delete from attendance_records where student_id = $1",
+      [studentId],
+    );
+    const assignmentResult = await client.query(
+      "delete from route_schedule_students where student_id = $1",
+      [studentId],
+    );
+    await client.query("delete from students where id = $1", [studentId]);
+    await client.query("commit");
+
+    return {
+      studentId: student.id,
+      studentName: student.name,
+      deletedRelations: {
+        scheduleAssignments: assignmentResult.rowCount,
+        attendanceRecords: attendanceResult.rowCount,
+        smsLogs: smsResult.rowCount,
+      },
+    };
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 async function findAdminVehicles() {
   const result = await pool.query(
     `
@@ -317,6 +378,66 @@ async function deactivateAdminVehicle(vehicleId) {
   }
 
   return findAdminVehicleById(result.rows[0].id);
+}
+
+async function deleteAdminVehicle(vehicleId) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("begin");
+    const vehicleResult = await client.query(
+      `
+        select id, name
+        from vehicles
+        where id = $1
+        for update
+      `,
+      [vehicleId],
+    );
+    const vehicle = vehicleResult.rows[0];
+
+    if (!vehicle) {
+      await client.query("rollback");
+      return null;
+    }
+
+    const smsResult = await client.query(
+      `
+        delete from sms_logs
+        where attendance_record_id in (
+          select id
+          from attendance_records
+          where vehicle_id = $1
+        )
+      `,
+      [vehicleId],
+    );
+    const attendanceResult = await client.query(
+      "delete from attendance_records where vehicle_id = $1",
+      [vehicleId],
+    );
+    const scheduleResult = await client.query(
+      "delete from route_schedules where vehicle_id = $1",
+      [vehicleId],
+    );
+    await client.query("delete from vehicles where id = $1", [vehicleId]);
+    await client.query("commit");
+
+    return {
+      vehicleId: vehicle.id,
+      vehicleName: vehicle.name,
+      deletedRelations: {
+        schedules: scheduleResult.rowCount,
+        attendanceRecords: attendanceResult.rowCount,
+        smsLogs: smsResult.rowCount,
+      },
+    };
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function findAdminVehicleById(vehicleId) {
@@ -497,6 +618,67 @@ async function deactivateAdminSchedule(scheduleId) {
   }
 
   return findAdminScheduleById(result.rows[0].id);
+}
+
+async function deleteAdminSchedule(scheduleId) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("begin");
+    const scheduleResult = await client.query(
+      `
+        select id, name, vehicle_id
+        from route_schedules
+        where id = $1
+        for update
+      `,
+      [scheduleId],
+    );
+    const schedule = scheduleResult.rows[0];
+
+    if (!schedule) {
+      await client.query("rollback");
+      return null;
+    }
+
+    const smsResult = await client.query(
+      `
+        delete from sms_logs
+        where attendance_record_id in (
+          select id
+          from attendance_records
+          where route_schedule_id = $1
+        )
+      `,
+      [scheduleId],
+    );
+    const attendanceResult = await client.query(
+      "delete from attendance_records where route_schedule_id = $1",
+      [scheduleId],
+    );
+    const assignmentResult = await client.query(
+      "delete from route_schedule_students where route_schedule_id = $1",
+      [scheduleId],
+    );
+    await client.query("delete from route_schedules where id = $1", [scheduleId]);
+    await client.query("commit");
+
+    return {
+      scheduleId: schedule.id,
+      scheduleName: schedule.name,
+      vehicleId: schedule.vehicle_id,
+      deletedRelations: {
+        studentAssignments: assignmentResult.rowCount,
+        attendanceRecords: attendanceResult.rowCount,
+        smsLogs: smsResult.rowCount,
+      },
+    };
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function findAdminScheduleById(scheduleId) {
@@ -728,6 +910,9 @@ module.exports = {
   deactivateAdminSchedule,
   deactivateAdminStudent,
   deactivateAdminVehicle,
+  deleteAdminSchedule,
+  deleteAdminStudent,
+  deleteAdminVehicle,
   findAdminAttendanceRecords,
   findAdminVehicleById,
   findAdminScheduleById,

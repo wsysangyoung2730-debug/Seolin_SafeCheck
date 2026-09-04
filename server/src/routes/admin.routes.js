@@ -9,6 +9,9 @@ const {
   deactivateSchedule,
   deactivateStudent,
   deactivateVehicle,
+  deleteSchedule,
+  deleteStudent,
+  deleteVehicle,
   exportAdminAttendanceRecords,
   getAdminAttendanceRecords,
   getAdminOverview,
@@ -112,6 +115,20 @@ router.patch("/students/:studentId/deactivate", asyncHandler(async (req, res) =>
   return res.json(successResponse(result.data));
 }));
 
+router.delete("/students/:studentId", asyncHandler(async (req, res) => {
+  const result = await deleteStudent(req.params.studentId);
+
+  if (!result.success) {
+    const status = result.code === "STUDENT_NOT_FOUND" ? 404 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
 router.get("/vehicles", asyncHandler(async (req, res) => {
   const result = await getAdminVehicles();
 
@@ -146,6 +163,20 @@ router.patch("/vehicles/:vehicleId", asyncHandler(async (req, res) => {
 
 router.patch("/vehicles/:vehicleId/deactivate", asyncHandler(async (req, res) => {
   const result = await deactivateVehicle(req.params.vehicleId);
+
+  if (!result.success) {
+    const status = result.code === "VEHICLE_NOT_FOUND" ? 404 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
+router.delete("/vehicles/:vehicleId", asyncHandler(async (req, res) => {
+  const result = await deleteVehicle(req.params.vehicleId);
 
   if (!result.success) {
     const status = result.code === "VEHICLE_NOT_FOUND" ? 404 : 400;
@@ -195,6 +226,20 @@ router.patch("/schedules/:scheduleId", asyncHandler(async (req, res) => {
 
 router.patch("/schedules/:scheduleId/deactivate", asyncHandler(async (req, res) => {
   const result = await deactivateSchedule(req.params.scheduleId);
+
+  if (!result.success) {
+    const status = result.code === "SCHEDULE_NOT_FOUND" ? 404 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
+router.delete("/schedules/:scheduleId", asyncHandler(async (req, res) => {
+  const result = await deleteSchedule(req.params.scheduleId);
 
   if (!result.success) {
     const status = result.code === "SCHEDULE_NOT_FOUND" ? 404 : 400;

@@ -5,6 +5,9 @@ const {
   deactivateAdminSchedule,
   deactivateAdminStudent,
   deactivateAdminVehicle,
+  deleteAdminSchedule,
+  deleteAdminStudent,
+  deleteAdminVehicle,
   findAdminAttendanceRecords,
   findAdminScheduleById,
   findAdminSchedules,
@@ -245,6 +248,32 @@ async function deactivateVehicle(vehicleId) {
   };
 }
 
+async function deleteVehicle(vehicleId) {
+  if (!vehicleId) {
+    return {
+      success: false,
+      message: "차량 정보를 찾을 수 없습니다.",
+    };
+  }
+
+  const deletedVehicle = await deleteAdminVehicle(vehicleId);
+
+  if (!deletedVehicle) {
+    return {
+      success: false,
+      code: "VEHICLE_NOT_FOUND",
+      message: "차량 정보를 찾을 수 없습니다.",
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      deletedVehicle,
+    },
+  };
+}
+
 function normalizeScheduleFilters(filters = {}) {
   return {
     dayOfWeek:
@@ -341,6 +370,32 @@ async function deactivateSchedule(scheduleId) {
     success: true,
     data: {
       schedule,
+    },
+  };
+}
+
+async function deleteSchedule(scheduleId) {
+  if (!scheduleId) {
+    return {
+      success: false,
+      message: "시간표 정보를 찾을 수 없습니다.",
+    };
+  }
+
+  const deletedSchedule = await deleteAdminSchedule(scheduleId);
+
+  if (!deletedSchedule) {
+    return {
+      success: false,
+      code: "SCHEDULE_NOT_FOUND",
+      message: "시간표 정보를 찾을 수 없습니다.",
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      deletedSchedule,
     },
   };
 }
@@ -562,6 +617,32 @@ async function deactivateStudent(studentId) {
   };
 }
 
+async function deleteStudent(studentId) {
+  if (!studentId) {
+    return {
+      success: false,
+      message: "원생 정보를 찾을 수 없습니다.",
+    };
+  }
+
+  const deletedStudent = await deleteAdminStudent(studentId);
+
+  if (!deletedStudent) {
+    return {
+      success: false,
+      code: "STUDENT_NOT_FOUND",
+      message: "원생 정보를 찾을 수 없습니다.",
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      deletedStudent,
+    },
+  };
+}
+
 module.exports = {
   createSchedule,
   createStudent,
@@ -569,6 +650,9 @@ module.exports = {
   deactivateSchedule,
   deactivateStudent,
   deactivateVehicle,
+  deleteSchedule,
+  deleteStudent,
+  deleteVehicle,
   getAdminAttendanceRecords,
   exportAdminAttendanceRecords,
   getAdminOverview,

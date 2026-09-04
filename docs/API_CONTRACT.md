@@ -606,6 +606,13 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 }
 ```
 
+### DELETE `/api/admin/students/:studentId`
+
+관리자가 원생을 영구 삭제합니다. 해당 원생의 시간표 배정, 출결 기록, 문자 기록을 하나의 트랜잭션에서 함께 삭제하며 복구할 수 없습니다.
+
+- Required auth: `admin`
+- 없는 원생 ID: `STUDENT_NOT_FOUND`와 `404`
+
 ### GET `/api/admin/vehicles`
 
 관리자 차량 목록 화면의 기반이 되는 차량 목록을 반환합니다.
@@ -685,6 +692,13 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 - Required auth: `admin`
 
+### DELETE `/api/admin/vehicles/:vehicleId`
+
+관리자가 차량을 영구 삭제합니다. 해당 차량의 시간표, 출결 기록, 출결에 연결된 문자 기록을 하나의 트랜잭션에서 함께 삭제하며 복구할 수 없습니다. 차량에 연결되어 있던 기사님 계정은 삭제하지 않습니다.
+
+- Required auth: `admin`
+- 없는 차량 ID: `VEHICLE_NOT_FOUND`와 `404`
+
 ### GET `/api/admin/schedules`
 
 관리자 운행 시간대 목록 화면의 기반이 되는 일정 목록을 반환합니다. 요일과 차량을 함께 지정하면 해당 조합의 시간표만 반환합니다.
@@ -756,6 +770,13 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 관리자가 시간표를 비활성화합니다. 출결 기록과 원생 기록은 삭제하지 않습니다.
 
 - Required auth: `admin`
+
+### DELETE `/api/admin/schedules/:scheduleId`
+
+관리자가 시간표를 영구 삭제합니다. 해당 시간표의 원생 배정, 출결 기록, 출결에 연결된 문자 기록을 하나의 트랜잭션에서 함께 삭제하며 복구할 수 없습니다.
+
+- Required auth: `admin`
+- 없는 시간표 ID: `SCHEDULE_NOT_FOUND`와 `404`
 
 ### GET `/api/admin/schedules/:scheduleId/students`
 
@@ -880,9 +901,6 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 다음 API는 계획만 있으며 현재 구현되어 있지 않습니다.
 
-- `DELETE /api/admin/vehicles/:id`
-- `DELETE /api/admin/schedules/:id`
-- `DELETE /api/admin/students/:id`
 - `GET /api/admin/settings`
 - `PATCH /api/admin/settings`
 
