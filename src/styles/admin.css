@@ -138,42 +138,6 @@ a {
   font-weight: 750;
 }
 
-.phone-input {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  overflow: hidden;
-  width: 100%;
-  min-height: 48px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #FFFFFF;
-}
-
-.phone-input:focus-within {
-  border-color: var(--primary-navy);
-  outline: 3px solid rgba(31, 43, 123, 0.16);
-}
-
-.phone-input__prefix {
-  display: grid;
-  place-items: center;
-  min-width: 62px;
-  border-right: 1px solid var(--border);
-  background: #F9FAFB;
-  color: var(--primary-navy);
-  font-weight: 850;
-}
-
-.field .phone-input input {
-  min-height: 46px;
-  border: 0;
-  border-radius: 0;
-}
-
-.field .phone-input input:focus {
-  outline: 0;
-}
-
 .primary-button,
 .secondary-button,
 .ghost-button,

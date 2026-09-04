@@ -69,8 +69,8 @@ function validateStudentInput(student) {
     return "탑승 장소를 입력해주세요.";
   }
 
-  if (student.parentPhone && !/^010\d{8}$/.test(student.parentPhone)) {
-    return "보호자 연락처를 010-0000-0000 형식으로 입력해주세요.";
+  if (student.parentPhone && !/^\d{11}$/.test(student.parentPhone)) {
+    return "보호자 연락처를 000-0000-0000 형식으로 입력해주세요.";
   }
 
   if (Array.from(student.memo).length > STUDENT_MEMO_MAX_LENGTH) {
