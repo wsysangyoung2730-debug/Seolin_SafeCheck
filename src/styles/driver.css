@@ -57,7 +57,7 @@ a {
 .brand-logo--login {
   width: min(260px, 78vw);
   max-height: 132px;
-  margin: 0 0 18px;
+  margin: 0 auto 18px;
 }
 
 .brand-logo--compact {

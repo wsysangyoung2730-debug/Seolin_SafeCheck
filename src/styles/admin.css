@@ -479,6 +479,7 @@ a {
 
 .assignment-list {
   display: grid;
+  min-height: 160px;
   max-height: min(56vh, 460px);
   overflow: auto;
   border: 1px solid var(--border);
@@ -488,6 +489,13 @@ a {
 
 .assignment-search {
   width: 100%;
+}
+
+.assignment-list .table-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: 160px;
 }
 
 .assignment-item {
