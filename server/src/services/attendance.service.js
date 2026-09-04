@@ -1,5 +1,4 @@
 const { upsertAttendanceRecords } = require("../repositories/attendance.repository");
-const { createAttendanceSmsLogs } = require("./sms/sms.service");
 
 const VALID_ATTENDANCE_STATUSES = new Set([
   "unchecked",
@@ -49,21 +48,13 @@ async function saveAttendance({
     checkedByUserId,
     records,
   });
-  let smsSummary = {
+  const smsSummary = {
     total: 0,
     sent: 0,
     skipped: 0,
     failed: 0,
+    disabled: true,
   };
-
-  try {
-    smsSummary = await createAttendanceSmsLogs({
-      date,
-      scheduleId,
-    });
-  } catch (error) {
-    console.warn("mock SMS log creation failed:", error.message);
-  }
 
   return {
     success: true,
