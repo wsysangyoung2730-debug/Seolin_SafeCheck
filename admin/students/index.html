@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>원생 관리 | Seolin SafeCheck</title>
-    <link rel="stylesheet" href="../../src/styles/admin.css">
+    <link rel="stylesheet" href="../../src/styles/admin.css?v=guardian-contact-2">
   </head>
   <body>
     <div class="admin-shell">
@@ -64,7 +64,7 @@
                 <tr>
                   <th scope="col">원생 이름</th>
                   <th scope="col">탑승 장소</th>
-                  <th scope="col">연락처 상태</th>
+                  <th scope="col">보호자 연락처</th>
                   <th scope="col">상태</th>
                   <th scope="col">작업</th>
                 </tr>
@@ -91,22 +91,30 @@
           <input id="pickup-place" name="pickupPlace" type="text" autocomplete="off">
         </label>
 
-        <label class="field">
-          <span>보호자 이름</span>
-          <input id="parent-name" name="parentName" type="text" autocomplete="name">
-        </label>
+        <fieldset class="form-section">
+          <legend>보호자 연락처</legend>
+          <p id="parent-contact-helper" class="form-section__helper">
+            기사님 화면의 전화·문자 버튼에 연결할 연락처입니다.
+          </p>
 
-        <label class="field">
-          <span>보호자 연락처</span>
-          <input
-            id="parent-phone"
-            name="parentPhone"
-            type="tel"
-            inputmode="tel"
-            autocomplete="tel"
-            placeholder="예: 010-1234-5678"
-          >
-        </label>
+          <label class="field">
+            <span>보호자 이름</span>
+            <input id="parent-name" name="parentName" type="text" autocomplete="name">
+          </label>
+
+          <label class="field">
+            <span>전화번호</span>
+            <input
+              id="parent-phone"
+              name="parentPhone"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              aria-describedby="parent-contact-helper"
+              placeholder="예: 010-1234-5678"
+            >
+          </label>
+        </fieldset>
 
         <label class="checkbox-field">
           <input id="is-active" name="isActive" type="checkbox" checked>
@@ -131,6 +139,6 @@
       </form>
     </dialog>
 
-    <script type="module" src="../../src/app/admin/students.js?v=guardian-contact-1"></script>
+    <script type="module" src="../../src/app/admin/students.js?v=guardian-contact-2"></script>
   </body>
 </html>

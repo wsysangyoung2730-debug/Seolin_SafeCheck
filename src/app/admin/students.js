@@ -3,7 +3,7 @@ import {
   deactivateAdminStudent,
   getAdminStudents,
   updateAdminStudent,
-} from "../../services/adminApi.js?v=guardian-contact-1";
+} from "../../services/adminApi.js?v=guardian-contact-2";
 import { ApiClientError } from "../../services/apiClient.js";
 import { bindPlannedNavigation, requireAdminSession } from "./layout.js";
 
@@ -50,7 +50,7 @@ function getVisibleStudents() {
 
 function getContactLabel(student) {
   if (student.parentContactStatus !== "registered") {
-    return "연락처 없음";
+    return "연락처 입력";
   }
 
   return [student.parentName, student.parentContactMasked]
@@ -93,7 +93,26 @@ function renderStudents() {
     pickupCell.textContent = student.pickupPlace;
 
     const contactCell = document.createElement("td");
-    contactCell.textContent = getContactLabel(student);
+    const contactSummary = document.createElement("div");
+    const contactStatus = document.createElement("span");
+    const contactEditButton = document.createElement("button");
+    const hasContact = student.parentContactStatus === "registered";
+
+    contactSummary.className = "contact-summary";
+    contactStatus.className = hasContact ? "badge badge--success" : "badge";
+    contactStatus.textContent = hasContact ? "등록됨" : "미등록";
+    contactEditButton.type = "button";
+    contactEditButton.className = "contact-edit-button";
+    contactEditButton.textContent = getContactLabel(student);
+    contactEditButton.setAttribute(
+      "aria-label",
+      `${student.studentName} 원생 보호자 연락처 ${hasContact ? "수정" : "입력"}`,
+    );
+    contactEditButton.addEventListener("click", () => {
+      openStudentDialog(student, { focusContact: true });
+    });
+    contactSummary.append(contactStatus, contactEditButton);
+    contactCell.append(contactSummary);
 
     const statusCell = document.createElement("td");
     statusCell.append(renderStatusBadge(student));
@@ -124,7 +143,7 @@ function renderStudents() {
   });
 }
 
-function openStudentDialog(student = null) {
+function openStudentDialog(student = null, { focusContact = false } = {}) {
   form.reset();
   studentIdInput.value = student?.studentId || "";
   studentNameInput.value = student?.studentName || "";
@@ -135,7 +154,7 @@ function openStudentDialog(student = null) {
   dialogTitle.textContent = student ? "원생 정보 수정" : "원생 추가";
   saveButton.textContent = student ? "수정 저장" : "원생 추가";
   dialog.showModal();
-  studentNameInput.focus();
+  (focusContact ? parentPhoneInput : studentNameInput).focus();
 }
 
 function closeStudentDialog() {

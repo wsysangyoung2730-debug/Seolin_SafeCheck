@@ -442,6 +442,30 @@ a {
   white-space: nowrap;
 }
 
+.contact-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.contact-edit-button {
+  min-height: 34px;
+  border: 1px solid rgba(31, 43, 123, 0.18);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: rgba(31, 43, 123, 0.05);
+  color: var(--primary-navy);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.contact-edit-button:hover,
+.contact-edit-button:focus-visible {
+  border-color: var(--primary-navy);
+  background: rgba(31, 43, 123, 0.1);
+}
+
 .table-empty {
   height: 120px;
   color: var(--text-secondary);
@@ -534,6 +558,29 @@ a {
 
 .student-dialog h2 {
   margin: 0 0 18px;
+}
+
+.form-section {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.form-section legend {
+  padding: 0 6px;
+  color: var(--primary-navy);
+  font-weight: 850;
+}
+
+.form-section__helper {
+  margin: -4px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .checkbox-field {
