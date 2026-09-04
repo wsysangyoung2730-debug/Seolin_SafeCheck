@@ -40,6 +40,58 @@ async function upsertAttendanceRecords({
   try {
     await client.query("begin");
 
+    const scopeResult = await client.query(
+      `
+        select exists (
+          select 1
+          from vehicles
+          inner join route_schedules
+            on route_schedules.id = $3
+            and route_schedules.vehicle_id = vehicles.id
+            and route_schedules.is_active = true
+          where vehicles.id = $1
+            and vehicles.driver_user_id = $2
+            and vehicles.is_active = true
+        ) as is_allowed
+      `,
+      [vehicleId, checkedByUserId, scheduleId],
+    );
+
+    if (!scopeResult.rows[0]?.is_allowed) {
+      await client.query("rollback");
+      return { status: "forbidden" };
+    }
+
+    const requestedStudentIds = Array.from(
+      new Set(records.map((record) => record.studentId)),
+    );
+    const assignmentResult = await client.query(
+      `
+        select
+          route_schedule_students.student_id,
+          coalesce(
+            nullif(route_schedule_students.pickup_place_override, ''),
+            students.default_pickup_place
+          ) as pickup_place
+        from route_schedule_students
+        inner join students
+          on students.id = route_schedule_students.student_id
+          and students.is_active = true
+        where route_schedule_students.route_schedule_id = $1
+          and route_schedule_students.student_id = any($2::text[])
+      `,
+      [scheduleId, requestedStudentIds],
+    );
+
+    if (assignmentResult.rows.length !== requestedStudentIds.length) {
+      await client.query("rollback");
+      return { status: "student_not_assigned" };
+    }
+
+    const pickupPlaces = new Map(
+      assignmentResult.rows.map((row) => [row.student_id, row.pickup_place]),
+    );
+
     for (const record of records) {
       await client.query(
         `
@@ -80,7 +132,7 @@ async function upsertAttendanceRecords({
           record.status,
           savedAt.toISOString(),
           checkedByUserId,
-          record.pickupPlace,
+          pickupPlaces.get(record.studentId),
         ],
       );
     }
@@ -88,6 +140,7 @@ async function upsertAttendanceRecords({
     await client.query("commit");
 
     return {
+      status: "saved",
       savedAt: savedAt.toISOString(),
       summary: getAttendanceSummary(records),
     };

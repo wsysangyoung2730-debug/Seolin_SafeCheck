@@ -14,7 +14,6 @@ function hasValidRecords(records) {
       (record) =>
         record &&
         record.studentId &&
-        record.pickupPlace &&
         VALID_ATTENDANCE_STATUSES.has(record.status),
     )
   );
@@ -48,6 +47,22 @@ async function saveAttendance({
     checkedByUserId,
     records,
   });
+
+  if (result.status === "forbidden") {
+    return {
+      success: false,
+      code: "ATTENDANCE_SCOPE_FORBIDDEN",
+      message: "이 차량과 시간표의 출결을 저장할 권한이 없습니다.",
+    };
+  }
+
+  if (result.status === "student_not_assigned") {
+    return {
+      success: false,
+      code: "STUDENT_NOT_ASSIGNED",
+      message: "시간표에 배정되지 않은 원생이 포함되어 있습니다.",
+    };
+  }
   const smsSummary = {
     total: 0,
     sent: 0,

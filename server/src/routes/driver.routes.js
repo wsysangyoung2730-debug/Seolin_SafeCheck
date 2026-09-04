@@ -66,8 +66,10 @@ router.post("/attendance/save", asyncHandler(async (req, res) => {
   });
 
   if (!result.success) {
-    return res.status(400).json(
-      errorResponse("VALIDATION_ERROR", result.message),
+    const status = result.code === "ATTENDANCE_SCOPE_FORBIDDEN" ? 403 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
     );
   }
 
