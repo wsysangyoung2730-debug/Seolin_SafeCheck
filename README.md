@@ -126,6 +126,8 @@ docker compose up -d --build
 - 기사님: `car1` / `1234`
 - 관리자: `admin` / `1234`
 
+예시 PIN도 DB에는 Argon2id 해시로만 저장됩니다. 로그인 상태는 브라우저 저장소가 아니라 서버 DB 세션과 `HttpOnly` 쿠키로 관리됩니다.
+
 `server/.env`가 있으면 Docker 백엔드가 해당 파일의 설정을 함께 읽습니다. 현재 출결 저장 서비스는 SMS 환경 변수와 무관하게 자동 문자를 발송하지 않습니다.
 
 종료할 때는 다음 명령을 사용합니다.
@@ -197,6 +199,8 @@ Synology NAS에서는 다음 컨테이너 구성을 사용합니다.
 - nginx 프론트엔드 및 `/api` 프록시
 
 실제 NAS 설치, 빈 운영 DB 초기화, 리버스 프록시, HTTPS, 백업 절차는 [NAS 배포 문서](docs/NAS_DEPLOYMENT.md)를 따릅니다.
+
+최초 관리자 계정은 NAS backend 컨테이너의 `npm run account:create` 명령으로 생성합니다. 이후 기사 로그인 ID와 PIN 재설정은 관리자 화면의 차량 관리에서 처리합니다. 운영 PIN 원문은 SQL이나 환경변수에 저장하지 않습니다.
 
 운영 DB 볼륨은 임의로 삭제하지 않으며, `docker compose down -v` 같은 데이터 삭제 명령을 운영 환경에서 사용하지 않습니다.
 

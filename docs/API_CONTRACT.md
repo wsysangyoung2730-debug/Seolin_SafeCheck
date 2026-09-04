@@ -4,7 +4,7 @@
 
 이 문서는 Seolin SafeCheck MVP의 백엔드 API 계약을 정의합니다. 현재 단계의 목적은 기사님용 프론트엔드 mock 흐름을 PostgreSQL 기반 백엔드 API로 교체할 수 있도록 요청/응답 형태를 고정하는 것입니다.
 
-이 문서는 API 경로, 공통 응답 형식, 개발용 인증 방식, 기사님용 일정/원생/출결 저장 API, 관리자 API 기반과 원생/차량/시간표/출결 기록 조회 MVP API를 설명합니다. 현재 로컬 백엔드는 PostgreSQL schema/seed와 repository 계층을 사용합니다. **운영용 인증은 아직 포함되지 않으며, 출결 저장에 따른 서버 자동 SMS 발송은 비활성화되어 있습니다.**
+이 문서는 API 경로, 쿠키 기반 인증 방식, 기사님용 일정/원생/출결 저장 API, 관리자 API 기반과 원생/차량/시간표/출결 기록 조회 MVP API를 설명합니다. 현재 백엔드는 PostgreSQL schema/seed와 repository 계층을 사용합니다. **PIN/비밀번호는 Argon2id 해시로 저장하며, 출결 저장에 따른 서버 자동 SMS 발송은 비활성화되어 있습니다.**
 
 ## 2. API 설계 원칙
 
@@ -38,29 +38,24 @@ https://safecheck.example.com/api
 
 프론트엔드 정적 화면과 백엔드 API가 다른 포트에서 동작할 수 있으므로 개발 환경에서는 CORS를 허용합니다. 운영 환경에서는 허용 origin을 실제 도메인으로 제한합니다.
 
-## 4. MVP 인증/세션 정책
+## 4. 인증/세션 정책
 
-현재 백엔드는 개발용 인증만 제공합니다.
-
-- 개발용 mock 계정: `car1`
-- 개발용 mock PIN/비밀번호: `1234`
-- 개발용 관리자 계정: `admin`
-- 개발용 관리자 PIN/비밀번호: `1234`
-- 로그인 성공 시 개발용 token을 반환합니다.
-- 보호된 API는 다음 중 하나로 token을 받을 수 있습니다.
-  - `Authorization: Bearer mock-driver-token-car1`
-  - `x-mock-session-token: mock-driver-token-car1`
-  - `Authorization: Bearer mock-admin-token-admin`
-  - `x-mock-session-token: mock-admin-token-admin`
+- 로컬 seed 예시 계정은 기사 `car1` / `1234`, 관리자 `admin` / `1234`입니다.
+- 운영 계정에는 예시 비밀번호를 사용하지 않습니다.
+- PIN/비밀번호 원문은 저장하지 않고 Argon2id 해시만 `users.password_hash`에 저장합니다.
+- 로그인 성공 시 256비트 무작위 세션을 생성하고 해시값만 `auth_sessions`에 저장합니다.
+- 브라우저에는 `HttpOnly`, `SameSite=Strict`, 운영 환경 `Secure` 속성의 쿠키만 전달합니다.
+- 세션 기본 만료 시간은 12시간이며 로그아웃, PIN 재설정, 차량 비활성화 시 서버에서 폐기합니다.
+- 동일 계정·IP에서 5회 연속 실패하면 15분 동안 로그인을 제한합니다.
 
 권한 규칙:
 
 - `/api/driver/*`: `driver` 권한 필요
 - `/api/admin/*`: `admin` 권한 필요
-- 토큰이 없거나 알 수 없으면 `UNAUTHORIZED`
+- 유효한 세션 쿠키가 없으면 `UNAUTHORIZED`
 - 로그인했지만 역할이 맞지 않으면 `FORBIDDEN`
 
-실제 운영 인증에서는 안전한 비밀번호/PIN 해시, 세션 저장소, 만료 처리, HTTPS 전송, 계정 비활성화 정책을 추가해야 합니다. 현재 `development_pin_hash`는 seed 개발 데이터 검증용이며 운영 보안 구현이 아닙니다.
+기사 계정의 로그인 ID와 PIN 재설정은 차량 관리에서 처리합니다. PIN 원문은 조회 API에 포함하지 않습니다.
 
 ## 5. 공통 응답 형식
 
@@ -107,7 +102,7 @@ https://safecheck.example.com/api
 
 ### POST `/api/auth/driver/login`
 
-기사님 개발용 로그인 API입니다. 계정 정보는 PostgreSQL `users` 테이블에서 조회합니다.
+기사님 로그인 API입니다. 계정 정보는 PostgreSQL `users` 테이블에서 조회합니다.
 
 요청 예시:
 
@@ -133,7 +128,6 @@ https://safecheck.example.com/api
 {
   "success": true,
   "data": {
-    "token": "mock-driver-token-car1",
     "user": {
       "id": "driver_car1",
       "role": "driver",
@@ -142,7 +136,8 @@ https://safecheck.example.com/api
       "vehicleId": "vehicle_1",
       "vehicleName": "1호차"
     },
-    "isMockSession": true
+    "expiresAt": "2026-09-05T01:00:00.000Z",
+    "isMockSession": false
   }
 }
 ```
@@ -161,7 +156,7 @@ https://safecheck.example.com/api
 
 ### POST `/api/auth/admin/login`
 
-관리자 개발용 로그인 API입니다. 계정 정보는 PostgreSQL `users` 테이블에서 조회합니다. 이 계정은 로컬 개발 검증용이며 운영용 인증이 아닙니다.
+관리자 로그인 API입니다. 계정 정보는 PostgreSQL `users` 테이블에서 조회합니다.
 
 요청 예시:
 
@@ -187,14 +182,14 @@ https://safecheck.example.com/api
 {
   "success": true,
   "data": {
-    "token": "mock-admin-token-admin",
     "user": {
       "id": "admin_1",
       "role": "admin",
       "accountId": "admin",
       "displayName": "관리자"
     },
-    "isMockSession": true
+    "expiresAt": "2026-09-05T01:00:00.000Z",
+    "isMockSession": false
   }
 }
 ```
@@ -213,7 +208,7 @@ https://safecheck.example.com/api
 
 ### GET `/api/auth/me`
 
-현재 개발용 token에 해당하는 사용자 정보를 PostgreSQL에서 조회해 반환합니다.
+현재 보안 쿠키 세션에 해당하는 사용자 정보를 PostgreSQL에서 조회해 반환합니다.
 
 기사님 성공 응답 예시:
 
@@ -265,7 +260,7 @@ https://safecheck.example.com/api
 
 ### POST `/api/auth/logout`
 
-mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므로 항상 성공 응답을 반환합니다.
+현재 요청의 서버 세션을 삭제하고 브라우저 쿠키를 만료시킵니다.
 
 ```json
 {
@@ -358,7 +353,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 ### POST `/api/driver/attendance/save`
 
-선택한 시간대의 출결 기록을 저장합니다. PostgreSQL `attendance_records`에 insert/update만 수행하며 SMS provider는 호출하지 않습니다.
+선택한 시간대의 출결 기록을 저장합니다. 로그인 기사가 해당 차량과 시간표를 담당하는지, 모든 원생이 시간표에 배정되어 있는지 서버에서 검증합니다. 탑승 장소는 요청값을 신뢰하지 않고 서버 배정 정보를 사용합니다. PostgreSQL `attendance_records`에 insert/update만 수행하며 SMS provider는 호출하지 않습니다.
 
 요청 예시:
 
@@ -413,6 +408,8 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
   }
 }
 ```
+
+다른 차량·시간표 요청은 `ATTENDANCE_SCOPE_FORBIDDEN`과 `403`, 미배정 원생이 포함된 요청은 `STUDENT_NOT_ASSIGNED`와 `400`을 반환합니다.
 
 ## 11. Admin API Foundation
 
@@ -665,7 +662,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 ### POST `/api/admin/vehicles`
 
-관리자가 차량을 추가합니다. 기사님 계정 생성/배정 UI는 이 단계에서 구현하지 않습니다.
+관리자가 차량과 연결된 기사 로그인 계정을 함께 추가합니다. 기사 PIN은 숫자 6~12자리이며 원문을 저장하거나 응답하지 않습니다.
 
 - Required auth: `admin`
 
@@ -673,7 +670,9 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 ```json
 {
-  "vehicleName": "개발 테스트 차량"
+  "vehicleName": "개발 테스트 차량",
+  "driverAccountId": "test_car",
+  "driverPin": "654321"
 }
 ```
 
@@ -686,7 +685,10 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
     "vehicle": {
       "vehicleId": "vehicle_admin_1770000000000_ab12cd",
       "vehicleName": "개발 테스트 차량",
-      "driver": null,
+      "driver": {
+        "accountId": "test_car",
+        "displayName": "개발 테스트 차량 기사님"
+      },
       "isActive": true
     }
   }
@@ -695,7 +697,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 ### PATCH `/api/admin/vehicles/:vehicleId`
 
-관리자가 차량명과 활성 상태를 수정합니다.
+관리자가 차량명, 기사 로그인 ID와 활성 상태를 수정합니다. `driverPin`을 생략하거나 빈 문자열로 보내면 기존 PIN을 유지하고, 새 값을 보내면 PIN을 재설정하고 기존 기사 세션을 모두 종료합니다.
 
 - Required auth: `admin`
 
@@ -704,19 +706,21 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 ```json
 {
   "vehicleName": "수정된 테스트 차량",
+  "driverAccountId": "test_car",
+  "driverPin": "",
   "isActive": true
 }
 ```
 
 ### PATCH `/api/admin/vehicles/:vehicleId/deactivate`
 
-관리자가 차량을 비활성화합니다. 출결 기록이나 시간표를 삭제하지 않습니다.
+관리자가 차량을 비활성화합니다. 연결된 기사 계정도 비활성화하고 기존 로그인 세션을 종료합니다. 출결 기록이나 시간표는 삭제하지 않습니다.
 
 - Required auth: `admin`
 
 ### DELETE `/api/admin/vehicles/:vehicleId`
 
-관리자가 차량을 영구 삭제합니다. 해당 차량의 시간표, 출결 기록, 출결에 연결된 문자 기록을 하나의 트랜잭션에서 함께 삭제하며 복구할 수 없습니다. 차량에 연결되어 있던 기사님 계정은 삭제하지 않습니다.
+관리자가 차량을 영구 삭제합니다. 해당 차량의 시간표, 출결 기록, 출결에 연결된 문자 기록과 연결된 기사 계정을 하나의 트랜잭션에서 함께 삭제하며 복구할 수 없습니다.
 
 - Required auth: `admin`
 - 없는 차량 ID: `VEHICLE_NOT_FOUND`와 `404`
@@ -968,4 +972,4 @@ Excel은 DB의 원본 데이터를 가져오거나 내보내는 보조 수단입
 - 기사님용 프론트엔드는 `src/services/apiClient.js`를 통해 현재 백엔드 API를 호출합니다.
 - SMS provider 모듈은 보존되어 있지만 현재 출결 저장 서비스와 연결되어 있지 않습니다.
 - Excel은 출결 기록 내보내기와 import preview 검증만 구현되어 있습니다.
-- 현재 구현된 관리자 API는 개발용 admin 로그인, 권한 확인, overview/students/vehicles/schedules/attendance-records 조회, 원생/차량/시간표 생성/수정/비활성화, 시간표별 원생 배정입니다.
+- 현재 구현된 관리자 API는 운영형 쿠키 로그인, 권한 확인, overview/students/vehicles/schedules/attendance-records 조회, 원생/차량/시간표 생성/수정/비활성화, 기사 로그인 관리, 시간표별 원생 배정입니다.

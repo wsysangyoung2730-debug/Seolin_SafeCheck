@@ -68,6 +68,8 @@ NODE_ENV=production
 PORT=3000
 FRONTEND_PORT=8080
 CORS_ORIGIN=https://YOUR_DOMAIN
+SESSION_COOKIE_SECURE=true
+SESSION_TTL_HOURS=12
 POSTGRES_DB=CHANGE_ME_DB
 POSTGRES_USER=CHANGE_ME_USER
 POSTGRES_PASSWORD=CHANGE_ME_PASSWORD
@@ -85,6 +87,7 @@ SOLAPI_SENDER_NUMBER=
 
 - 실제 `.env`는 커밋하지 않습니다.
 - 실제 API Key, API Secret, 전화번호, NAS 주소를 문서나 Git에 남기지 않습니다.
+- `SESSION_COOKIE_SECURE=true`는 HTTPS 운영에서 유지합니다.
 - 운영 전까지 `SMS_PROVIDER=mock`, `SMS_REAL_SEND_ENABLED=false`를 권장합니다.
 - SOLAPI 테스트는 `SMS_TEST_MODE=true`와 `SMS_TEST_TO`로 1건씩만 확인합니다.
 
@@ -174,6 +177,8 @@ Docker UI 입력 예시:
   NODE_ENV=production
   PORT=3000
   CORS_ORIGIN=https://YOUR_DOMAIN
+  SESSION_COOKIE_SECURE=true
+  SESSION_TTL_HOURS=12
   DATABASE_URL=postgres://운영_DB_사용자:운영_DB_비밀번호@seolin-safecheck-prod-db:5432/운영_DB_이름
   SMS_PROVIDER=mock
   SMS_REAL_SEND_ENABLED=false
@@ -241,21 +246,26 @@ Docker UI 입력 예시:
 
 `docker-compose.prod.yml`은 PostgreSQL volume이 완전히 비어 있는 첫 실행 시 `schema.sql`만 자동 적용합니다. 운영에서는 `seed.sql`을 자동 적용하지 않습니다.
 
-운영 초기 로그인에는 최소 계정만 별도로 생성합니다.
+운영 초기 로그인에는 관리자 계정 1개만 Container Manager의 backend 터미널에서 생성합니다. 비밀번호는 명령 인자, SQL, 환경변수에 넣지 않고 화면에 표시되지 않는 대화형 입력으로 받습니다.
 
-- 관리자 계정 1개
-- 기사님 계정 `car1`, `car2`
-- 각 기사님 계정에 연결된 차량 `1호차`, `2호차`
-
-운영 비밀번호/PIN은 실제 운영자가 NAS에서 직접 설정합니다. 문서나 Git에는 남기지 않습니다.
-
-참고 템플릿:
-
-```txt
-server/src/db/production-initial-accounts.example.sql
+```sh
+docker compose -f docker-compose.prod.yml --env-file .env exec backend \
+  npm run account:create -- \
+  --role admin \
+  --id admin \
+  --name 관리자 \
+  --user-id admin_1
 ```
 
-이 파일은 예시입니다. NAS에서 복사한 뒤 `CHANGE_ME_*` 값을 실제 운영 PIN으로 바꿔 1회만 실행합니다. 수정된 실제 운영 SQL 파일은 Git에 커밋하지 않습니다.
+관리자 비밀번호는 10자 이상이어야 합니다. 분실 시 같은 명령 끝에 `--reset`을 추가해 재설정하며, 기존 세션은 모두 종료됩니다.
+
+기사 계정은 관리자 로그인 후 **차량 관리 → 차량 추가/수정**에서 관리합니다.
+
+- 차량 추가: 기사 로그인 ID와 숫자 6~12자리 PIN 필수
+- 차량 수정: 로그인 ID 변경 가능, 새 PIN은 재설정할 때만 입력
+- PIN 재설정·차량 비활성화: 기존 기사 세션 즉시 종료
+- 차량 영구 삭제: 연결된 기사 계정도 함께 삭제
+- PIN 원문은 DB, API 응답, 관리자 화면 어디에도 표시하지 않음
 
 개발용 명령:
 
