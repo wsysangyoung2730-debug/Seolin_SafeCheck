@@ -99,3 +99,10 @@ export function apiPut(path, body, options) {
     body,
   });
 }
+
+export function apiDelete(path, options) {
+  return request(path, {
+    ...options,
+    method: "DELETE",
+  });
+}

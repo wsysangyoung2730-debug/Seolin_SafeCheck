@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>원생 관리 | Seolin SafeCheck</title>
-    <link rel="stylesheet" href="../../src/styles/admin.css?v=phone-format-2">
+    <link rel="stylesheet" href="../../src/styles/admin.css?v=permanent-delete-1">
   </head>
   <body>
     <div class="admin-shell">
@@ -147,15 +147,26 @@
 
     <dialog id="deactivate-dialog" class="student-dialog">
       <form class="form-stack" method="dialog">
-        <h2>원생 미이용 처리</h2>
+        <h2>원생 미이용</h2>
         <p id="deactivate-message" class="helper-note"></p>
         <div class="dialog-actions">
           <button id="cancel-deactivate-button" class="secondary-button" type="button">취소</button>
-          <button id="confirm-deactivate-button" class="danger-button" type="button">미이용 처리</button>
+          <button id="confirm-deactivate-button" class="danger-button" type="button">미이용</button>
         </div>
       </form>
     </dialog>
 
-    <script type="module" src="../../src/app/admin/students.js?v=phone-format-2"></script>
+    <dialog id="student-delete-dialog" class="student-dialog">
+      <form class="form-stack" method="dialog">
+        <h2>원생 영구 삭제</h2>
+        <p id="student-delete-message" class="helper-note destructive-note"></p>
+        <div class="dialog-actions">
+          <button id="cancel-student-delete-button" class="secondary-button" type="button">취소</button>
+          <button id="confirm-student-delete-button" class="danger-button danger-button--filled" type="button">영구 삭제</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="../../src/app/admin/students.js?v=permanent-delete-1"></script>
   </body>
 </html>

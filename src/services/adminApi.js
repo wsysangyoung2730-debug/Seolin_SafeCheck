@@ -1,4 +1,10 @@
-import { apiGet, apiPatch, apiPost, apiPut } from "./apiClient.js";
+import {
+  apiDelete,
+  apiGet,
+  apiPatch,
+  apiPost,
+  apiPut,
+} from "./apiClient.js?v=permanent-delete-1";
 import { getApiBaseUrl } from "../config/apiConfig.js";
 import { getStoredAdminSession } from "./adminSession.js";
 
@@ -65,6 +71,13 @@ export async function deactivateAdminStudent(studentId) {
   );
 }
 
+export async function deleteAdminStudent(studentId) {
+  return apiDelete(
+    `/api/admin/students/${encodeURIComponent(studentId)}`,
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
 export async function getAdminVehicles() {
   return apiGet("/api/admin/vehicles", ADMIN_AUTH_OPTIONS);
 }
@@ -92,6 +105,13 @@ export async function deactivateAdminVehicle(vehicleId) {
   return apiPatch(
     `/api/admin/vehicles/${encodeURIComponent(vehicleId)}/deactivate`,
     {},
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
+export async function deleteAdminVehicle(vehicleId) {
+  return apiDelete(
+    `/api/admin/vehicles/${encodeURIComponent(vehicleId)}`,
     ADMIN_AUTH_OPTIONS,
   );
 }
@@ -158,6 +178,13 @@ export async function deactivateAdminSchedule(scheduleId) {
   return apiPatch(
     `/api/admin/schedules/${encodeURIComponent(scheduleId)}/deactivate`,
     {},
+    ADMIN_AUTH_OPTIONS,
+  );
+}
+
+export async function deleteAdminSchedule(scheduleId) {
+  return apiDelete(
+    `/api/admin/schedules/${encodeURIComponent(scheduleId)}`,
     ADMIN_AUTH_OPTIONS,
   );
 }

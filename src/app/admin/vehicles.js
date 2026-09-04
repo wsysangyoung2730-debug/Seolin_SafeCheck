@@ -1,10 +1,12 @@
 import {
   createAdminVehicle,
   deactivateAdminVehicle,
+  deleteAdminVehicle,
   getAdminVehicles,
   updateAdminVehicle,
-} from "../../services/adminApi.js";
+} from "../../services/adminApi.js?v=permanent-delete-1";
 import { ApiClientError } from "../../services/apiClient.js";
+import { createTrashButton } from "./deleteAction.js?v=permanent-delete-1";
 import { bindPlannedNavigation, requireAdminSession } from "./layout.js";
 
 const vehicleTableBody = document.querySelector("#vehicle-table-body");
@@ -22,9 +24,14 @@ const deactivateDialog = document.querySelector("#vehicle-deactivate-dialog");
 const deactivateMessage = document.querySelector("#vehicle-deactivate-message");
 const cancelDeactivateButton = document.querySelector("#cancel-vehicle-deactivate-button");
 const confirmDeactivateButton = document.querySelector("#confirm-vehicle-deactivate-button");
+const deleteDialog = document.querySelector("#vehicle-delete-dialog");
+const deleteMessage = document.querySelector("#vehicle-delete-message");
+const cancelDeleteButton = document.querySelector("#cancel-vehicle-delete-button");
+const confirmDeleteButton = document.querySelector("#confirm-vehicle-delete-button");
 
 let vehicles = [];
 let pendingDeactivateVehicle = null;
+let pendingDeleteVehicle = null;
 let isSaving = false;
 
 function setMessage(text, type = "info") {
@@ -87,7 +94,12 @@ function renderVehicles() {
     deactivateButton.disabled = !vehicle.isActive;
     deactivateButton.addEventListener("click", () => openDeactivateDialog(vehicle));
 
-    actionCell.append(editButton, deactivateButton);
+    const deleteButton = createTrashButton({
+      label: `${vehicle.vehicleName} 차량 영구 삭제`,
+      onClick: () => openDeleteDialog(vehicle),
+    });
+
+    actionCell.append(editButton, deactivateButton, deleteButton);
     row.append(nameCell, driverCell, statusCell, idCell, actionCell);
     vehicleTableBody.append(row);
   });
@@ -222,6 +234,42 @@ async function confirmDeactivate() {
   }
 }
 
+function openDeleteDialog(vehicle) {
+  pendingDeleteVehicle = vehicle;
+  const driverWarning = vehicle.driver
+    ? " 배정된 기사님 계정은 차량 미배정 상태가 됩니다."
+    : "";
+  deleteMessage.textContent = `${vehicle.vehicleName} 차량을 영구 삭제할까요? 소속 시간표, 출결 기록, 연결된 문자 기록도 함께 삭제되며 복구할 수 없습니다.${driverWarning}`;
+  deleteDialog.showModal();
+}
+
+async function confirmDelete() {
+  if (!pendingDeleteVehicle) {
+    return;
+  }
+
+  const vehicle = pendingDeleteVehicle;
+  confirmDeleteButton.disabled = true;
+  setMessage("차량과 연결 기록을 삭제하는 중입니다.", "info");
+
+  try {
+    await deleteAdminVehicle(vehicle.vehicleId);
+    setMessage(`${vehicle.vehicleName} 차량을 영구 삭제했습니다.`, "success");
+    await loadVehicles();
+  } catch (error) {
+    setMessage(
+      error instanceof ApiClientError
+        ? error.message
+        : "차량을 삭제하지 못했습니다.",
+      "error",
+    );
+  } finally {
+    confirmDeleteButton.disabled = false;
+    pendingDeleteVehicle = null;
+    deleteDialog.close();
+  }
+}
+
 async function initializeVehicles() {
   const session = await requireAdminSession();
 
@@ -238,6 +286,11 @@ async function initializeVehicles() {
     deactivateDialog.close();
   });
   confirmDeactivateButton.addEventListener("click", confirmDeactivate);
+  cancelDeleteButton.addEventListener("click", () => {
+    pendingDeleteVehicle = null;
+    deleteDialog.close();
+  });
+  confirmDeleteButton.addEventListener("click", confirmDelete);
 
   await loadVehicles();
 }

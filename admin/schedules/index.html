@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>시간표 관리 | Seolin SafeCheck</title>
-    <link rel="stylesheet" href="../../src/styles/admin.css">
+    <link rel="stylesheet" href="../../src/styles/admin.css?v=permanent-delete-1">
   </head>
   <body>
     <div class="admin-shell">
@@ -139,6 +139,17 @@
       </form>
     </dialog>
 
-    <script type="module" src="../../src/app/admin/schedules.js"></script>
+    <dialog id="schedule-delete-dialog" class="student-dialog">
+      <form class="form-stack" method="dialog">
+        <h2>시간표 영구 삭제</h2>
+        <p id="schedule-delete-message" class="helper-note destructive-note"></p>
+        <div class="dialog-actions">
+          <button id="cancel-schedule-delete-button" class="secondary-button" type="button">취소</button>
+          <button id="confirm-schedule-delete-button" class="danger-button danger-button--filled" type="button">영구 삭제</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="../../src/app/admin/schedules.js?v=permanent-delete-1"></script>
   </body>
 </html>

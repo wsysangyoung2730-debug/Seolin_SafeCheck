@@ -1,13 +1,15 @@
 import {
   createAdminSchedule,
   deactivateAdminSchedule,
+  deleteAdminSchedule,
   getAdminScheduleStudents,
   getAdminSchedules,
   getAdminVehicles,
   updateAdminSchedule,
   updateAdminScheduleStudents,
-} from "../../services/adminApi.js";
+} from "../../services/adminApi.js?v=permanent-delete-1";
 import { ApiClientError } from "../../services/apiClient.js";
+import { createTrashButton } from "./deleteAction.js?v=permanent-delete-1";
 import { bindPlannedNavigation, requireAdminSession } from "./layout.js";
 
 const scheduleTableBody = document.querySelector("#schedule-table-body");
@@ -38,6 +40,10 @@ const deactivateDialog = document.querySelector("#schedule-deactivate-dialog");
 const deactivateMessage = document.querySelector("#schedule-deactivate-message");
 const cancelDeactivateButton = document.querySelector("#cancel-schedule-deactivate-button");
 const confirmDeactivateButton = document.querySelector("#confirm-schedule-deactivate-button");
+const deleteDialog = document.querySelector("#schedule-delete-dialog");
+const deleteMessage = document.querySelector("#schedule-delete-message");
+const cancelDeleteButton = document.querySelector("#cancel-schedule-delete-button");
+const confirmDeleteButton = document.querySelector("#confirm-schedule-delete-button");
 
 let schedules = [];
 let vehicles = [];
@@ -47,6 +53,7 @@ let selectedAssignmentSchedule = null;
 let assignmentStudents = [];
 let assignmentSelectedIds = new Set();
 let pendingDeactivateSchedule = null;
+let pendingDeleteSchedule = null;
 let isSaving = false;
 
 const WEEKDAYS = [
@@ -216,7 +223,12 @@ function renderSchedules() {
     deactivateButton.disabled = !schedule.isActive;
     deactivateButton.addEventListener("click", () => openDeactivateDialog(schedule));
 
-    actionCell.append(assignmentButton, editButton, deactivateButton);
+    const deleteButton = createTrashButton({
+      label: `${schedule.vehicleName} ${schedule.startTime} 시간표 영구 삭제`,
+      onClick: () => openDeleteDialog(schedule),
+    });
+
+    actionCell.append(assignmentButton, editButton, deactivateButton, deleteButton);
     row.append(vehicleCell, nameCell, startTimeCell, countCell, statusCell, actionCell);
     scheduleTableBody.append(row);
   });
@@ -551,6 +563,39 @@ async function confirmDeactivate() {
   }
 }
 
+function openDeleteDialog(schedule) {
+  pendingDeleteSchedule = schedule;
+  deleteMessage.textContent = `${schedule.vehicleName} ${schedule.startTime} 시간표를 영구 삭제할까요? 원생 배정, 출결 기록, 연결된 문자 기록도 함께 삭제되며 복구할 수 없습니다.`;
+  deleteDialog.showModal();
+}
+
+async function confirmDelete() {
+  if (!pendingDeleteSchedule) {
+    return;
+  }
+
+  const schedule = pendingDeleteSchedule;
+  confirmDeleteButton.disabled = true;
+  setMessage("시간표와 연결 기록을 삭제하는 중입니다.", "info");
+
+  try {
+    await deleteAdminSchedule(schedule.scheduleId);
+    setMessage(`${schedule.startTime} 시간표를 영구 삭제했습니다.`, "success");
+    await loadSchedules();
+  } catch (error) {
+    setMessage(
+      error instanceof ApiClientError
+        ? error.message
+        : "시간표를 삭제하지 못했습니다.",
+      "error",
+    );
+  } finally {
+    confirmDeleteButton.disabled = false;
+    pendingDeleteSchedule = null;
+    deleteDialog.close();
+  }
+}
+
 async function initializeSchedules() {
   const session = await requireAdminSession();
 
@@ -575,6 +620,11 @@ async function initializeSchedules() {
     deactivateDialog.close();
   });
   confirmDeactivateButton.addEventListener("click", confirmDeactivate);
+  cancelDeleteButton.addEventListener("click", () => {
+    pendingDeleteSchedule = null;
+    deleteDialog.close();
+  });
+  confirmDeleteButton.addEventListener("click", confirmDelete);
 
   await loadBaseData();
 }

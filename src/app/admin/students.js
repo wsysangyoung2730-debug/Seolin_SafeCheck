@@ -1,10 +1,12 @@
 import {
   createAdminStudent,
   deactivateAdminStudent,
+  deleteAdminStudent,
   getAdminStudents,
   updateAdminStudent,
-} from "../../services/adminApi.js?v=phone-format-2";
+} from "../../services/adminApi.js?v=permanent-delete-1";
 import { ApiClientError } from "../../services/apiClient.js";
+import { createTrashButton } from "./deleteAction.js?v=permanent-delete-1";
 import { bindPlannedNavigation, requireAdminSession } from "./layout.js";
 
 const studentTableBody = document.querySelector("#student-table-body");
@@ -28,10 +30,15 @@ const deactivateDialog = document.querySelector("#deactivate-dialog");
 const deactivateMessage = document.querySelector("#deactivate-message");
 const cancelDeactivateButton = document.querySelector("#cancel-deactivate-button");
 const confirmDeactivateButton = document.querySelector("#confirm-deactivate-button");
+const deleteDialog = document.querySelector("#student-delete-dialog");
+const deleteMessage = document.querySelector("#student-delete-message");
+const cancelDeleteButton = document.querySelector("#cancel-student-delete-button");
+const confirmDeleteButton = document.querySelector("#confirm-student-delete-button");
 
 let students = [];
 let isSaving = false;
 let pendingDeactivateStudent = null;
+let pendingDeleteStudent = null;
 const STUDENT_MEMO_MAX_LENGTH = 20;
 
 function setMessage(text, type = "info") {
@@ -180,13 +187,18 @@ function renderStudents() {
     const deactivateButton = document.createElement("button");
     deactivateButton.type = "button";
     deactivateButton.className = "danger-button";
-    deactivateButton.textContent = "미이용 처리";
+    deactivateButton.textContent = "미이용";
     deactivateButton.disabled = !student.isActive;
     deactivateButton.addEventListener("click", () => {
       handleDeactivate(student);
     });
 
-    actionCell.append(editButton, deactivateButton);
+    const deleteButton = createTrashButton({
+      label: `${student.studentName} 원생 영구 삭제`,
+      onClick: () => openDeleteDialog(student),
+    });
+
+    actionCell.append(editButton, deactivateButton, deleteButton);
     row.append(nameCell, pickupCell, contactCell, statusCell, actionCell);
     studentTableBody.append(row);
   });
@@ -335,11 +347,11 @@ async function confirmDeactivate() {
 
   const student = pendingDeactivateStudent;
   confirmDeactivateButton.disabled = true;
-  setMessage("원생을 미이용 처리하는 중입니다.", "info");
+  setMessage("원생을 미이용으로 변경하는 중입니다.", "info");
 
   try {
     await deactivateAdminStudent(student.studentId);
-    setMessage("원생을 미이용 처리했습니다.", "success");
+    setMessage("원생을 미이용으로 변경했습니다.", "success");
     await loadStudents();
   } catch (error) {
     setMessage(
@@ -352,6 +364,39 @@ async function confirmDeactivate() {
     confirmDeactivateButton.disabled = false;
     pendingDeactivateStudent = null;
     deactivateDialog.close();
+  }
+}
+
+function openDeleteDialog(student) {
+  pendingDeleteStudent = student;
+  deleteMessage.textContent = `${student.studentName} 원생을 영구 삭제할까요? 시간표 배정, 출결 기록, 문자 기록도 함께 삭제되며 복구할 수 없습니다.`;
+  deleteDialog.showModal();
+}
+
+async function confirmDelete() {
+  if (!pendingDeleteStudent) {
+    return;
+  }
+
+  const student = pendingDeleteStudent;
+  confirmDeleteButton.disabled = true;
+  setMessage("원생과 연결 기록을 삭제하는 중입니다.", "info");
+
+  try {
+    await deleteAdminStudent(student.studentId);
+    setMessage(`${student.studentName} 원생을 영구 삭제했습니다.`, "success");
+    await loadStudents();
+  } catch (error) {
+    setMessage(
+      error instanceof ApiClientError
+        ? error.message
+        : "원생을 삭제하지 못했습니다.",
+      "error",
+    );
+  } finally {
+    confirmDeleteButton.disabled = false;
+    pendingDeleteStudent = null;
+    deleteDialog.close();
   }
 }
 
@@ -370,6 +415,11 @@ async function initializeStudents() {
     deactivateDialog.close();
   });
   confirmDeactivateButton.addEventListener("click", confirmDeactivate);
+  cancelDeleteButton.addEventListener("click", () => {
+    pendingDeleteStudent = null;
+    deleteDialog.close();
+  });
+  confirmDeleteButton.addEventListener("click", confirmDelete);
   form.addEventListener("submit", handleSave);
   memoInput.addEventListener("input", updateMemoCount);
   parentPhoneInput.addEventListener("input", updateParentPhoneFormat);
