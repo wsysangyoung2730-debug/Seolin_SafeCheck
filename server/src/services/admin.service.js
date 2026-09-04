@@ -15,9 +15,11 @@ const {
   findAdminVehicles,
   findActiveStudentIds,
   findScheduleAssignmentData,
+  findStudentScheduleAssignmentData,
   findVehicleExists,
   getOverviewCounts,
   replaceScheduleStudents,
+  replaceStudentSchedules,
   updateAdminSchedule,
   updateAdminStudent,
   updateAdminVehicle,
@@ -155,6 +157,72 @@ async function getAdminOverview() {
 async function getAdminStudents() {
   return {
     students: await findAdminStudents(),
+  };
+}
+
+async function getStudentSchedules(studentId) {
+  const data = await findStudentScheduleAssignmentData(studentId);
+
+  if (!data) {
+    return {
+      success: false,
+      code: "STUDENT_NOT_FOUND",
+      message: "원생 정보를 찾을 수 없습니다.",
+    };
+  }
+
+  return {
+    success: true,
+    data,
+  };
+}
+
+async function updateStudentSchedules(studentId, input) {
+  if (!Array.isArray(input.scheduleIds)) {
+    return {
+      success: false,
+      message: "배정할 시간표 목록이 올바르지 않습니다.",
+    };
+  }
+
+  const hasInvalidScheduleId = input.scheduleIds.some(
+    (scheduleId) => typeof scheduleId !== "string" || !scheduleId.trim(),
+  );
+
+  if (hasInvalidScheduleId) {
+    return {
+      success: false,
+      message: "배정할 시간표 목록이 올바르지 않습니다.",
+    };
+  }
+
+  const scheduleIds = Array.from(
+    new Set(
+      input.scheduleIds
+        .map((scheduleId) => scheduleId.trim())
+    ),
+  );
+  const result = await replaceStudentSchedules({ studentId, scheduleIds });
+
+  if (result.status === "student_not_found") {
+    return {
+      success: false,
+      code: "STUDENT_NOT_FOUND",
+      message: "원생 정보를 찾을 수 없습니다.",
+    };
+  }
+
+  if (result.status === "schedule_not_found") {
+    return {
+      success: false,
+      code: "SCHEDULE_NOT_FOUND",
+      message: "선택한 시간표 중 찾을 수 없는 항목이 있습니다.",
+    };
+  }
+
+  return {
+    success: true,
+    data: result.data,
   };
 }
 
@@ -661,9 +729,11 @@ module.exports = {
   getAdminVehicles,
   getAdminSmsLogs,
   getScheduleStudents,
+  getStudentSchedules,
   previewExcelImport,
   updateSchedule,
   updateScheduleStudents,
   updateStudent,
+  updateStudentSchedules,
   updateVehicle,
 };

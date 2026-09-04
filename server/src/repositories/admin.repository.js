@@ -58,7 +58,12 @@ async function findAdminStudents() {
         default_pickup_place,
         parent_phone,
         memo,
-        is_active
+        is_active,
+        (
+          select count(*)::int
+          from route_schedule_students
+          where route_schedule_students.student_id = students.id
+        ) as assigned_schedule_count
       from students
       order by is_active desc, name asc
     `,
@@ -72,9 +77,166 @@ async function findAdminStudents() {
     pickupPlace: row.default_pickup_place,
     memo: row.memo || "",
     isActive: row.is_active,
+    assignedScheduleCount: row.assigned_schedule_count,
     parentContactStatus: row.parent_phone ? "registered" : "not_registered",
     parentContactMasked: maskPhoneNumber(row.parent_phone),
   }));
+}
+
+async function findStudentScheduleAssignmentData(studentId) {
+  const studentResult = await pool.query(
+    `
+      select id, name, default_pickup_place, is_active
+      from students
+      where id = $1
+      limit 1
+    `,
+    [studentId],
+  );
+  const student = studentResult.rows[0];
+
+  if (!student) {
+    return null;
+  }
+
+  const scheduleResult = await pool.query(
+    `
+      select
+        route_schedules.id as schedule_id,
+        route_schedules.vehicle_id,
+        vehicles.name as vehicle_name,
+        vehicles.is_active as vehicle_is_active,
+        route_schedules.day_of_week,
+        route_schedules.name as schedule_name,
+        route_schedules.start_time,
+        route_schedules.is_active as schedule_is_active,
+        route_schedule_students.id is not null as is_assigned,
+        coalesce(
+          nullif(route_schedule_students.pickup_place_override, ''),
+          $2
+        ) as pickup_place
+      from route_schedules
+      inner join vehicles on vehicles.id = route_schedules.vehicle_id
+      left join route_schedule_students
+        on route_schedule_students.route_schedule_id = route_schedules.id
+        and route_schedule_students.student_id = $1
+      order by
+        array_position(
+          array['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+          route_schedules.day_of_week
+        ),
+        vehicles.name asc,
+        route_schedules.start_time asc
+    `,
+    [studentId, student.default_pickup_place],
+  );
+
+  return {
+    student: {
+      studentId: student.id,
+      studentName: student.name,
+      defaultPickupPlace: student.default_pickup_place,
+      isActive: student.is_active,
+    },
+    schedules: scheduleResult.rows.map((row) => ({
+      scheduleId: row.schedule_id,
+      vehicleId: row.vehicle_id,
+      vehicleName: row.vehicle_name,
+      vehicleIsActive: row.vehicle_is_active,
+      dayOfWeek: row.day_of_week,
+      name: row.schedule_name,
+      startTime: formatTimeValue(row.start_time),
+      scheduleIsActive: row.schedule_is_active,
+      isAssigned: row.is_assigned,
+      pickupPlace: row.pickup_place,
+    })),
+  };
+}
+
+async function replaceStudentSchedules({ studentId, scheduleIds }) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("begin");
+    const studentResult = await client.query(
+      "select id from students where id = $1 for update",
+      [studentId],
+    );
+
+    if (!studentResult.rows[0]) {
+      await client.query("rollback");
+      return { status: "student_not_found" };
+    }
+
+    const scheduleResult = scheduleIds.length === 0
+      ? { rows: [] }
+      : await client.query(
+          `
+            select id
+            from route_schedules
+            where id = any($1::text[])
+            for share
+          `,
+          [scheduleIds],
+        );
+    const existingScheduleIds = new Set(
+      scheduleResult.rows.map((row) => row.id),
+    );
+
+    if (existingScheduleIds.size !== scheduleIds.length) {
+      await client.query("rollback");
+      return { status: "schedule_not_found" };
+    }
+
+    await client.query(
+      `
+        delete from route_schedule_students
+        where student_id = $1
+          and not (route_schedule_id = any($2::text[]))
+      `,
+      [studentId, scheduleIds],
+    );
+
+    for (const scheduleId of scheduleIds) {
+      await client.query(
+        `
+          insert into route_schedule_students (
+            id,
+            route_schedule_id,
+            student_id,
+            pickup_order,
+            pickup_place_override,
+            memo
+          ) values (
+            $1,
+            $2,
+            $3,
+            (
+              select coalesce(max(pickup_order), 0) + 1
+              from route_schedule_students
+              where route_schedule_id = $2
+            ),
+            null,
+            null
+          )
+          on conflict (route_schedule_id, student_id) do nothing
+        `,
+        [`rss_${scheduleId}_${studentId}`, scheduleId, studentId],
+      );
+    }
+
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  return {
+    status: "updated",
+    data: await findStudentScheduleAssignmentData(studentId),
+  };
 }
 
 async function createAdminStudent({
@@ -921,9 +1083,11 @@ module.exports = {
   findAdminVehicles,
   findActiveStudentIds,
   findScheduleAssignmentData,
+  findStudentScheduleAssignmentData,
   findVehicleExists,
   getOverviewCounts,
   replaceScheduleStudents,
+  replaceStudentSchedules,
   updateAdminSchedule,
   updateAdminStudent,
   updateAdminVehicle,

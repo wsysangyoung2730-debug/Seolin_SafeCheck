@@ -485,6 +485,7 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
         "pickupPlace": "만촌역 앞",
         "memo": "멀미 있음 · 앞자리 배정",
         "isActive": true,
+        "assignedScheduleCount": 3,
         "parentContactStatus": "registered"
       }
     ]
@@ -612,6 +613,27 @@ mock 로그아웃 API입니다. 현재는 실제 세션 저장소가 없으므�
 
 - Required auth: `admin`
 - 없는 원생 ID: `STUDENT_NOT_FOUND`와 `404`
+
+### GET `/api/admin/students/:studentId/schedules`
+
+원생 기준으로 전체 차량 시간표와 현재 배정 여부를 반환합니다. 각 항목에는 요일, 시간, 차량, 활성 상태와 시간표별 보정값을 반영한 탑승장소가 포함됩니다.
+
+- Required auth: `admin`
+- 없는 원생 ID: `STUDENT_NOT_FOUND`와 `404`
+
+### PUT `/api/admin/students/:studentId/schedules`
+
+원생이 포함될 전체 시간표 ID를 한 번에 저장합니다. 유지된 기존 배정의 탑승 순서, 탑승장소 보정값과 메모는 보존하고 새 시간표만 추가하며 선택 해제된 시간표만 삭제합니다.
+
+- Required auth: `admin`
+
+요청 예시:
+
+```json
+{
+  "scheduleIds": ["schedule_1330", "schedule_1550"]
+}
+```
 
 ### GET `/api/admin/vehicles`
 

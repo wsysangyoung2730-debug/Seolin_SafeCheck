@@ -20,10 +20,12 @@ const {
   getAdminSmsLogs,
   getAdminVehicles,
   getScheduleStudents,
+  getStudentSchedules,
   previewExcelImport,
   updateSchedule,
   updateScheduleStudents,
   updateStudent,
+  updateStudentSchedules,
   updateVehicle,
 } = require("../services/admin.service");
 const { errorResponse, successResponse } = require("../utils/apiResponse");
@@ -120,6 +122,37 @@ router.delete("/students/:studentId", asyncHandler(async (req, res) => {
 
   if (!result.success) {
     const status = result.code === "STUDENT_NOT_FOUND" ? 404 : 400;
+
+    return res.status(status).json(
+      errorResponse(result.code || "VALIDATION_ERROR", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
+router.get("/students/:studentId/schedules", asyncHandler(async (req, res) => {
+  const result = await getStudentSchedules(req.params.studentId);
+
+  if (!result.success) {
+    return res.status(404).json(
+      errorResponse(result.code || "STUDENT_NOT_FOUND", result.message),
+    );
+  }
+
+  return res.json(successResponse(result.data));
+}));
+
+router.put("/students/:studentId/schedules", asyncHandler(async (req, res) => {
+  const result = await updateStudentSchedules(
+    req.params.studentId,
+    req.body || {},
+  );
+
+  if (!result.success) {
+    const status = ["STUDENT_NOT_FOUND", "SCHEDULE_NOT_FOUND"].includes(result.code)
+      ? 404
+      : 400;
 
     return res.status(status).json(
       errorResponse(result.code || "VALIDATION_ERROR", result.message),
