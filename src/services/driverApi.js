@@ -1,7 +1,9 @@
 import { apiGet } from "./apiClient.js";
 
-export async function getTodayDriverSchedules() {
-  return apiGet("/api/driver/schedules/today");
+export async function getTodayDriverSchedules(date) {
+  const queryString = date ? `?date=${encodeURIComponent(date)}` : "";
+
+  return apiGet(`/api/driver/schedules/today${queryString}`);
 }
 
 export async function getDriverScheduleStudents(scheduleId, date) {

@@ -6,6 +6,8 @@
   --text-secondary: #6B7280;
   --success: #16A34A;
   --warning: #F59E0B;
+  --next-action: #F59E0B;
+  --next-action-hover: #D97706;
   --danger: #DC2626;
   --border: #E5E7EB;
   --shadow: 0 18px 50px rgba(17, 24, 39, 0.10);
@@ -244,6 +246,87 @@ a {
   margin-bottom: 18px;
 }
 
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.app-shell--attendance .top-bar {
+  align-items: center;
+  gap: 8px;
+}
+
+.app-shell--attendance .top-brand {
+  gap: 8px;
+}
+
+.app-shell--attendance .brand-logo--compact {
+  width: 44px;
+  height: 44px;
+}
+
+.app-shell--attendance .top-brand .eyebrow {
+  display: none;
+}
+
+.app-shell--attendance .top-bar h1 {
+  font-size: 26px;
+  white-space: nowrap;
+}
+
+.app-shell--attendance .top-actions {
+  gap: 6px;
+}
+
+.app-shell--attendance .secondary-link {
+  padding-inline: 10px;
+  font-size: 14px;
+}
+
+.icon-button,
+.contact-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: var(--primary-navy);
+  text-decoration: none;
+}
+
+.icon-button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+.icon-button svg,
+.contact-button svg,
+.completion-button svg,
+.next-schedule-button svg,
+.locked-notice svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.icon-button.is-loading svg {
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .top-brand {
   display: flex;
   align-items: center;
@@ -257,6 +340,10 @@ a {
 
 .vehicle-summary {
   margin-bottom: 24px;
+}
+
+.vehicle-summary--compact {
+  padding: 18px;
 }
 
 .date-label {
@@ -295,7 +382,10 @@ a {
 .primary-button:focus,
 .secondary-link:focus,
 .primary-link-button:focus,
-.status-button:focus {
+.status-button:focus,
+.icon-button:focus,
+.contact-button:focus,
+.next-schedule-button:focus {
   outline: 3px solid rgba(31, 43, 123, 0.18);
   outline-offset: 2px;
 }
@@ -345,99 +435,105 @@ a {
 
 .attendance-section {
   display: grid;
-  gap: 16px;
+  gap: 12px;
+}
+
+.attendance-toolbar {
+  display: grid;
+  gap: 12px;
+}
+
+.attendance-toolbar .section-header {
+  margin: 0;
 }
 
 .student-list {
   display: grid;
-  gap: 14px;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .student-card {
   display: grid;
-  gap: 16px;
-  border: 2px solid var(--border);
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 18px;
+  padding: 14px;
   background: #FFFFFF;
-  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.06);
+  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.05);
 }
 
 .student-card--boarded {
-  border-color: rgba(22, 163, 74, 0.60);
-  background: rgba(22, 163, 74, 0.05);
+  border-color: rgba(22, 163, 74, 0.52);
+  background: rgba(22, 163, 74, 0.055);
 }
 
 .student-card--not_boarded {
-  border-color: rgba(220, 38, 38, 0.54);
-  background: rgba(220, 38, 38, 0.05);
+  border-color: rgba(220, 38, 38, 0.42);
+  background: rgba(220, 38, 38, 0.045);
 }
 
-.student-card__details h3 {
-  margin: 0;
-  font-size: 24px;
-  line-height: 1.2;
-}
-
-.student-card__details p {
-  margin: 8px 0;
-  color: var(--text-secondary);
-  font-size: 17px;
-  line-height: 1.45;
-}
-
-.status-label {
-  display: inline-flex;
+.student-card__header {
+  display: flex;
   align-items: center;
-  min-height: 34px;
-  border-radius: 8px;
-  padding: 0 10px;
-  background: var(--background);
-  color: var(--text-primary);
-  font-size: 16px;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
 }
 
-.status-label--boarded {
-  background: rgba(22, 163, 74, 0.12);
-  color: #166534;
+.student-card__header h3 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 21px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.status-label--not_boarded {
-  background: rgba(220, 38, 38, 0.11);
-  color: #991B1B;
+.contact-actions {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
 }
 
-.status-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+.contact-button {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+}
+
+.contact-button:disabled {
+  cursor: not-allowed;
+  color: #9CA3AF;
+  opacity: 0.62;
 }
 
 .status-button {
-  min-height: 56px;
-  border: 1px solid var(--border);
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid transparent;
   border-radius: 8px;
-  background: #FFFFFF;
-  color: var(--text-primary);
-  font-size: 19px;
+  color: #FFFFFF;
+  font-size: 18px;
   font-weight: 850;
 }
 
 .status-button:disabled {
   cursor: not-allowed;
-  opacity: 0.72;
+  filter: saturate(0.62);
+  opacity: 0.62;
 }
 
-.status-button--boarded[aria-pressed="true"] {
+.status-button--boarded {
   border-color: var(--success);
   background: var(--success);
-  color: #FFFFFF;
 }
 
-.status-button--not_boarded[aria-pressed="true"] {
+.status-button--not_boarded {
   border-color: var(--danger);
   background: var(--danger);
-  color: #FFFFFF;
 }
 
 .summary-panel {
@@ -451,25 +547,87 @@ a {
   gap: 6px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 14px 8px;
+  min-width: 72px;
+  padding: 9px 8px;
   background: #FFFFFF;
   text-align: center;
 }
 
 .summary-panel span {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 750;
 }
 
 .summary-panel strong {
-  font-size: 20px;
+  font-size: 18px;
 }
 
-.sticky-save-button {
+.locked-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  border: 1px solid rgba(31, 43, 123, 0.12);
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: rgba(31, 43, 123, 0.075);
+  color: var(--primary-navy);
+  font-weight: 800;
+  text-align: center;
+}
+
+.attendance-actions {
   position: sticky;
-  bottom: 16px;
-  box-shadow: 0 14px 32px rgba(31, 43, 123, 0.22);
+  z-index: 5;
+  bottom: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 32px rgba(31, 43, 123, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.completion-button,
+.next-schedule-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.completion-button--edit {
+  border: 1px solid var(--primary-navy);
+  background: #FFFFFF;
+  color: var(--primary-navy);
+}
+
+.next-schedule-button {
+  border: 1px solid var(--next-action);
+  background: var(--next-action);
+  color: #422006;
+}
+
+.next-schedule-button:not(:disabled):hover {
+  border-color: var(--next-action-hover);
+  background: var(--next-action-hover);
+  color: #FFFFFF;
+}
+
+.next-schedule-button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.45);
+  opacity: 0.58;
 }
 
 .confirm-dialog {
@@ -496,8 +654,94 @@ a {
   margin-top: 20px;
 }
 
+@media (min-width: 600px) {
+  .app-shell--attendance {
+    width: min(100%, 1440px);
+    padding-inline: 24px;
+  }
+
+  .student-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-shell--attendance .top-brand {
+    gap: 12px;
+  }
+
+  .app-shell--attendance .brand-logo--compact {
+    width: 52px;
+    height: 52px;
+  }
+
+  .app-shell--attendance .top-brand .eyebrow {
+    display: block;
+  }
+
+  .app-shell--attendance .top-bar h1 {
+    font-size: 30px;
+  }
+
+  .app-shell--attendance .top-actions {
+    gap: 8px;
+  }
+
+  .app-shell--attendance .secondary-link {
+    padding-inline: 14px;
+    font-size: inherit;
+  }
+
+  .attendance-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .attendance-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (min-width: 720px) {
   .app-shell {
     padding-top: 40px;
+  }
+
+  .app-shell--attendance {
+    padding-top: 24px;
+  }
+
+  .student-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .vehicle-summary--compact {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .vehicle-summary--compact .date-label,
+  .vehicle-summary--compact .muted {
+    margin: 0;
+  }
+
+  .vehicle-summary--compact .muted {
+    text-align: right;
+  }
+}
+
+@media (min-width: 1024px) {
+  .student-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .top-bar {
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .vehicle-summary--compact {
+    margin-bottom: 14px;
+    padding-block: 14px;
   }
 }

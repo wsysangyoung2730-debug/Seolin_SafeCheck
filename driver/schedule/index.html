@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>탑승 확인 | Seolin SafeCheck</title>
-    <link rel="stylesheet" href="../../src/styles/driver.css">
+    <link rel="stylesheet" href="../../src/styles/driver.css?v=ui-redesign-9-2">
   </head>
   <body>
-    <main class="app-shell">
+    <main class="app-shell app-shell--attendance">
       <header class="top-bar" aria-label="시간대별 탑승 확인">
         <div class="top-brand">
           <img
@@ -20,10 +20,24 @@
             <h1>탑승 확인</h1>
           </div>
         </div>
-        <a class="secondary-link" href="../home/">시간대 목록</a>
+        <div class="top-actions">
+          <a class="secondary-link" href="../home/">전체 시간표</a>
+          <button
+            id="refresh-button"
+            class="icon-button"
+            type="button"
+            aria-label="현재 시간표 새로고침"
+            title="새로고침"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 6v5h-5"></path>
+              <path d="M19 11a7 7 0 1 0 1 5"></path>
+            </svg>
+          </button>
+        </div>
       </header>
 
-      <section class="panel vehicle-summary" aria-label="선택한 운행 정보">
+      <section class="panel vehicle-summary vehicle-summary--compact" aria-label="선택한 운행 정보">
         <p id="today-label" class="date-label"></p>
         <h2 id="schedule-title">시간대 정보를 불러오는 중입니다</h2>
         <p id="vehicle-name" class="muted"></p>
@@ -36,32 +50,50 @@
       </section>
 
       <section id="attendance-section" class="attendance-section hidden" aria-labelledby="student-list-title">
-        <div class="section-header">
-          <p class="eyebrow">원생 목록</p>
-          <h2 id="student-list-title">원생별 탑승 상태를 선택하세요</h2>
-          <p class="muted">상태 버튼을 눌러도 문자는 발송되지 않습니다. 전체 저장 후 서버에 저장됩니다.</p>
+        <div class="attendance-toolbar">
+          <div class="section-header">
+            <p class="eyebrow">원생 목록</p>
+            <h2 id="student-list-title">원생별 탑승 상태</h2>
+          </div>
+
+          <section class="summary-panel" aria-label="현재 선택 요약">
+            <div>
+              <span>전체</span>
+              <strong id="total-count">0명</strong>
+            </div>
+            <div>
+              <span>탑승</span>
+              <strong id="boarded-count">0명</strong>
+            </div>
+            <div>
+              <span>미탑승</span>
+              <strong id="not-boarded-count">0명</strong>
+            </div>
+          </section>
+        </div>
+
+        <div id="locked-notice" class="locked-notice hidden" role="status">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="10" width="14" height="10" rx="2"></rect>
+            <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+          </svg>
+          <span>탑승 확인이 완료되어 출결 상태가 잠겼습니다.</span>
         </div>
 
         <div id="student-list" class="student-list" aria-live="polite"></div>
 
-        <section class="summary-panel" aria-label="현재 선택 요약">
-          <div>
-            <span>탑승</span>
-            <strong id="boarded-count">0명</strong>
-          </div>
-          <div>
-            <span>미탑승</span>
-            <strong id="not-boarded-count">0명</strong>
-          </div>
-          <div>
-            <span>미확인</span>
-            <strong id="unchecked-count">0명</strong>
-          </div>
-        </section>
-
-        <button id="save-button" class="primary-button sticky-save-button" type="button">
-          전체 저장
-        </button>
+        <div class="attendance-actions">
+          <button id="save-button" class="primary-button completion-button" type="button">
+            탑승 완료
+          </button>
+          <button id="next-schedule-button" class="next-schedule-button" type="button">
+            <span>다음 탑승지 이동</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14"></path>
+              <path d="m13 6 6 6-6 6"></path>
+            </svg>
+          </button>
+        </div>
 
         <p id="save-message" class="message message--info" role="status" aria-live="polite"></p>
       </section>
@@ -69,17 +101,17 @@
 
     <dialog id="save-dialog" class="confirm-dialog" aria-labelledby="save-dialog-title">
       <form method="dialog">
-        <h2 id="save-dialog-title">전체 저장할까요?</h2>
+        <h2 id="save-dialog-title">탑승 확인을 완료할까요?</h2>
         <p id="save-dialog-summary" class="muted"></p>
         <div class="dialog-actions">
           <button class="secondary-button" value="cancel" type="submit">취소</button>
           <button id="confirm-save-button" class="primary-button" value="confirm" type="submit">
-            저장하기
+            탑승 완료
           </button>
         </div>
       </form>
     </dialog>
 
-    <script type="module" src="../../src/app/driver/schedule.js"></script>
+    <script type="module" src="../../src/app/driver/schedule.js?v=ui-redesign-9-2"></script>
   </body>
 </html>
