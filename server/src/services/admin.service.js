@@ -24,6 +24,7 @@ const {
   previewStudentImport,
 } = require("./excel/excel.service");
 const { getAdminSmsLogs } = require("./sms/sms.service");
+const { normalizePhoneNumber } = require("./sms/phoneNumber");
 
 const VALID_ATTENDANCE_STATUSES = new Set([
   "unchecked",
@@ -40,9 +41,17 @@ const VALID_DAYS_OF_WEEK = new Set([
   "sunday",
 ]);
 
-function normalizeStudentInput({ studentName, pickupPlace, isActive }) {
+function normalizeStudentInput({
+  studentName,
+  parentName,
+  parentPhone,
+  pickupPlace,
+  isActive,
+}) {
   return {
     studentName: typeof studentName === "string" ? studentName.trim() : "",
+    parentName: typeof parentName === "string" ? parentName.trim() : "",
+    parentPhone: normalizePhoneNumber(parentPhone),
     pickupPlace: typeof pickupPlace === "string" ? pickupPlace.trim() : "",
     isActive: typeof isActive === "boolean" ? isActive : true,
   };
@@ -55,6 +64,10 @@ function validateStudentInput(student) {
 
   if (!student.pickupPlace) {
     return "탑승 장소를 입력해주세요.";
+  }
+
+  if (student.parentPhone && !/^0\d{8,10}$/.test(student.parentPhone)) {
+    return "보호자 연락처를 올바르게 입력해주세요.";
   }
 
   return "";

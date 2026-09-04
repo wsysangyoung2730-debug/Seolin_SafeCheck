@@ -6,6 +6,7 @@ async function findStudentsByScheduleId(scheduleId, date) {
       select
         students.id as student_id,
         students.name as student_name,
+        students.parent_phone,
         coalesce(
           route_schedule_students.pickup_place_override,
           students.default_pickup_place
@@ -30,6 +31,7 @@ async function findStudentsByScheduleId(scheduleId, date) {
   return result.rows.map((row) => ({
     studentId: row.student_id,
     studentName: row.student_name,
+    parentPhone: row.parent_phone || "",
     pickupPlace: row.pickup_place,
     status: row.status,
     lastSavedAt: row.last_saved_at,

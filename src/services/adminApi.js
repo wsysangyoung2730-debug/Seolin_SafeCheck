@@ -14,11 +14,18 @@ export async function getAdminStudents() {
   return apiGet("/api/admin/students", ADMIN_AUTH_OPTIONS);
 }
 
-export async function createAdminStudent({ studentName, pickupPlace }) {
+export async function createAdminStudent({
+  studentName,
+  parentName,
+  parentPhone,
+  pickupPlace,
+}) {
   return apiPost(
     "/api/admin/students",
     {
       studentName,
+      parentName,
+      parentPhone,
       pickupPlace,
     },
     ADMIN_AUTH_OPTIONS,
@@ -28,6 +35,8 @@ export async function createAdminStudent({ studentName, pickupPlace }) {
 export async function updateAdminStudent({
   studentId,
   studentName,
+  parentName,
+  parentPhone,
   pickupPlace,
   isActive,
 }) {
@@ -35,6 +44,8 @@ export async function updateAdminStudent({
     `/api/admin/students/${encodeURIComponent(studentId)}`,
     {
       studentName,
+      parentName,
+      parentPhone,
       pickupPlace,
       isActive,
     },

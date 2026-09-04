@@ -42,7 +42,7 @@
             <div>
               <p class="eyebrow">원생 관리</p>
               <h1>원생 목록</h1>
-              <p>원생 이름과 기본 탑승 장소, 출결 대상 여부를 관리합니다. 학부모 연락처 원문은 표시하지 않습니다.</p>
+              <p>원생 정보와 보호자 연락처, 출결 대상 여부를 관리합니다. 목록에서는 연락처를 마스킹해 표시합니다.</p>
             </div>
             <button id="add-student-button" class="primary-button" type="button">원생 추가</button>
           </div>
@@ -91,6 +91,23 @@
           <input id="pickup-place" name="pickupPlace" type="text" autocomplete="off">
         </label>
 
+        <label class="field">
+          <span>보호자 이름</span>
+          <input id="parent-name" name="parentName" type="text" autocomplete="name">
+        </label>
+
+        <label class="field">
+          <span>보호자 연락처</span>
+          <input
+            id="parent-phone"
+            name="parentPhone"
+            type="tel"
+            inputmode="tel"
+            autocomplete="tel"
+            placeholder="예: 010-1234-5678"
+          >
+        </label>
+
         <label class="checkbox-field">
           <input id="is-active" name="isActive" type="checkbox" checked>
           <span>출결 대상으로 이용 중</span>
@@ -114,6 +131,6 @@
       </form>
     </dialog>
 
-    <script type="module" src="../../src/app/admin/students.js"></script>
+    <script type="module" src="../../src/app/admin/students.js?v=guardian-contact-1"></script>
   </body>
 </html>

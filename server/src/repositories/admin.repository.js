@@ -1,4 +1,5 @@
 const pool = require("../db/pool");
+const { maskPhoneNumber } = require("../services/sms/phoneNumber");
 
 function formatTimeValue(value) {
   if (typeof value === "string") {
@@ -53,6 +54,7 @@ async function findAdminStudents() {
       select
         id,
         name,
+        parent_name,
         default_pickup_place,
         parent_phone,
         is_active
@@ -64,13 +66,21 @@ async function findAdminStudents() {
   return result.rows.map((row) => ({
     studentId: row.id,
     studentName: row.name,
+    parentName: row.parent_name || "",
+    parentPhone: row.parent_phone || "",
     pickupPlace: row.default_pickup_place,
     isActive: row.is_active,
     parentContactStatus: row.parent_phone ? "registered" : "not_registered",
+    parentContactMasked: maskPhoneNumber(row.parent_phone),
   }));
 }
 
-async function createAdminStudent({ studentName, pickupPlace }) {
+async function createAdminStudent({
+  studentName,
+  parentName,
+  parentPhone,
+  pickupPlace,
+}) {
   const randomSuffix = Math.random().toString(36).slice(2, 8);
   const studentId = `student_admin_${Date.now()}_${randomSuffix}`;
   const result = await pool.query(
@@ -86,11 +96,17 @@ async function createAdminStudent({ studentName, pickupPlace }) {
         created_at,
         updated_at
       ) values (
-        $1, $2, null, null, $3, null, true, now(), now()
+        $1, $2, $3, $4, $5, null, true, now(), now()
       )
-      returning id, name, default_pickup_place, parent_phone, is_active
+      returning
+        id,
+        name,
+        parent_name,
+        parent_phone,
+        default_pickup_place,
+        is_active
     `,
-    [studentId, studentName, pickupPlace],
+    [studentId, studentName, parentName || null, parentPhone || null, pickupPlace],
   );
 
   const row = result.rows[0];
@@ -98,15 +114,20 @@ async function createAdminStudent({ studentName, pickupPlace }) {
   return {
     studentId: row.id,
     studentName: row.name,
+    parentName: row.parent_name || "",
+    parentPhone: row.parent_phone || "",
     pickupPlace: row.default_pickup_place,
     isActive: row.is_active,
     parentContactStatus: row.parent_phone ? "registered" : "not_registered",
+    parentContactMasked: maskPhoneNumber(row.parent_phone),
   };
 }
 
 async function updateAdminStudent({
   studentId,
   studentName,
+  parentName,
+  parentPhone,
   pickupPlace,
   isActive,
 }) {
@@ -115,13 +136,28 @@ async function updateAdminStudent({
       update students
       set
         name = $2,
-        default_pickup_place = $3,
-        is_active = $4,
+        parent_name = $3,
+        parent_phone = $4,
+        default_pickup_place = $5,
+        is_active = $6,
         updated_at = now()
       where id = $1
-      returning id, name, default_pickup_place, parent_phone, is_active
+      returning
+        id,
+        name,
+        parent_name,
+        parent_phone,
+        default_pickup_place,
+        is_active
     `,
-    [studentId, studentName, pickupPlace, isActive],
+    [
+      studentId,
+      studentName,
+      parentName || null,
+      parentPhone || null,
+      pickupPlace,
+      isActive,
+    ],
   );
 
   const row = result.rows[0];
@@ -133,9 +169,12 @@ async function updateAdminStudent({
   return {
     studentId: row.id,
     studentName: row.name,
+    parentName: row.parent_name || "",
+    parentPhone: row.parent_phone || "",
     pickupPlace: row.default_pickup_place,
     isActive: row.is_active,
     parentContactStatus: row.parent_phone ? "registered" : "not_registered",
+    parentContactMasked: maskPhoneNumber(row.parent_phone),
   };
 }
 
@@ -147,7 +186,13 @@ async function deactivateAdminStudent(studentId) {
         is_active = false,
         updated_at = now()
       where id = $1
-      returning id, name, default_pickup_place, parent_phone, is_active
+      returning
+        id,
+        name,
+        parent_name,
+        parent_phone,
+        default_pickup_place,
+        is_active
     `,
     [studentId],
   );
@@ -161,9 +206,12 @@ async function deactivateAdminStudent(studentId) {
   return {
     studentId: row.id,
     studentName: row.name,
+    parentName: row.parent_name || "",
+    parentPhone: row.parent_phone || "",
     pickupPlace: row.default_pickup_place,
     isActive: row.is_active,
     parentContactStatus: row.parent_phone ? "registered" : "not_registered",
+    parentContactMasked: maskPhoneNumber(row.parent_phone),
   };
 }
 

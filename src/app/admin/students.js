@@ -3,7 +3,7 @@ import {
   deactivateAdminStudent,
   getAdminStudents,
   updateAdminStudent,
-} from "../../services/adminApi.js";
+} from "../../services/adminApi.js?v=guardian-contact-1";
 import { ApiClientError } from "../../services/apiClient.js";
 import { bindPlannedNavigation, requireAdminSession } from "./layout.js";
 
@@ -17,6 +17,8 @@ const dialogTitle = document.querySelector("#student-dialog-title");
 const studentIdInput = document.querySelector("#student-id");
 const studentNameInput = document.querySelector("#student-name");
 const pickupPlaceInput = document.querySelector("#pickup-place");
+const parentNameInput = document.querySelector("#parent-name");
+const parentPhoneInput = document.querySelector("#parent-phone");
 const isActiveInput = document.querySelector("#is-active");
 const cancelButton = document.querySelector("#cancel-student-button");
 const saveButton = document.querySelector("#save-student-button");
@@ -46,8 +48,14 @@ function getVisibleStudents() {
   );
 }
 
-function getContactLabel(status) {
-  return status === "registered" ? "연락처 등록됨" : "연락처 없음";
+function getContactLabel(student) {
+  if (student.parentContactStatus !== "registered") {
+    return "연락처 없음";
+  }
+
+  return [student.parentName, student.parentContactMasked]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 function renderStatusBadge(student) {
@@ -85,7 +93,7 @@ function renderStudents() {
     pickupCell.textContent = student.pickupPlace;
 
     const contactCell = document.createElement("td");
-    contactCell.textContent = getContactLabel(student.parentContactStatus);
+    contactCell.textContent = getContactLabel(student);
 
     const statusCell = document.createElement("td");
     statusCell.append(renderStatusBadge(student));
@@ -121,6 +129,8 @@ function openStudentDialog(student = null) {
   studentIdInput.value = student?.studentId || "";
   studentNameInput.value = student?.studentName || "";
   pickupPlaceInput.value = student?.pickupPlace || "";
+  parentNameInput.value = student?.parentName || "";
+  parentPhoneInput.value = student?.parentPhone || "";
   isActiveInput.checked = student ? student.isActive : true;
   dialogTitle.textContent = student ? "원생 정보 수정" : "원생 추가";
   saveButton.textContent = student ? "수정 저장" : "원생 추가";
@@ -137,6 +147,8 @@ function getFormValues() {
     studentId: studentIdInput.value,
     studentName: studentNameInput.value.trim(),
     pickupPlace: pickupPlaceInput.value.trim(),
+    parentName: parentNameInput.value.trim(),
+    parentPhone: parentPhoneInput.value.trim(),
     isActive: isActiveInput.checked,
   };
 }
@@ -151,6 +163,14 @@ function validateForm(values) {
   if (!values.pickupPlace) {
     setMessage("탑승 장소를 입력해주세요.", "error");
     pickupPlaceInput.focus();
+    return false;
+  }
+
+  const parentPhone = values.parentPhone.replace(/[^0-9]/g, "");
+
+  if (parentPhone && !/^0\d{8,10}$/.test(parentPhone)) {
+    setMessage("보호자 연락처를 올바르게 입력해주세요.", "error");
+    parentPhoneInput.focus();
     return false;
   }
 
