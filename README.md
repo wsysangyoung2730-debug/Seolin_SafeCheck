@@ -109,15 +109,31 @@ nginx (static frontend)
 ### Docker로 실행
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 기본 접속 주소:
 
+- 전체 웹 화면: `http://localhost:8080`
+- 기사님 로그인: `http://localhost:8080/driver/login/`
+- 관리자 로그인: `http://localhost:8080/admin/login/`
 - API: `http://localhost:3000`
 - PostgreSQL: `localhost:5432`
 
-로컬 Docker 설정에는 개발 전용 예시 계정이 포함되어 있습니다. 운영 환경에서는 반드시 별도 비밀번호를 사용해야 합니다.
+로컬 Docker 설정에는 개발 전용 예시 계정이 포함되어 있습니다.
+
+- 기사님: `car1` / `1234`
+- 관리자: `admin` / `1234`
+
+`server/.env`가 있으면 Docker 백엔드가 해당 파일의 SMS 설정을 함께 읽습니다. 실제 문자 테스트는 `SMS_TEST_MODE=true`와 테스트 수신번호를 사용해 진행하세요.
+
+종료할 때는 다음 명령을 사용합니다.
+
+```bash
+docker compose down
+```
+
+`docker compose down`은 컨테이너만 종료하며 개발 DB 볼륨은 유지합니다. 운영 환경에서는 반드시 별도 비밀번호를 사용해야 합니다.
 
 ### 백엔드만 실행
 
