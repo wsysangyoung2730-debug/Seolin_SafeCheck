@@ -6,8 +6,29 @@ const {
 } = require("../../repositories/sms.repository");
 const { getSmsProvider } = require("./smsProvider");
 
+function formatBoardedTime(checkedAt, fallbackTime = "") {
+  if (!checkedAt) {
+    return fallbackTime;
+  }
+
+  const checkedAtDate = new Date(checkedAt);
+
+  if (Number.isNaN(checkedAtDate.getTime())) {
+    return fallbackTime;
+  }
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(checkedAtDate);
+}
+
 function createBoardedMessage(target) {
-  return `[서린태권도] ${target.studentName} 학생이 ${target.startTime}에 ${target.pickupPlace}에서 승차하였습니다.`;
+  const boardedTime = formatBoardedTime(target.checkedAt, target.startTime);
+
+  return `[서린태권도] ${target.studentName} 학생이 ${boardedTime}에 ${target.pickupPlace}에서 승차하였습니다.`;
 }
 
 async function getEnabledStatuses() {
@@ -86,5 +107,7 @@ async function getAdminSmsLogs(filters) {
 
 module.exports = {
   createAttendanceSmsLogs,
+  createBoardedMessage,
+  formatBoardedTime,
   getAdminSmsLogs,
 };
