@@ -478,68 +478,183 @@ async function findAdminVehicles() {
   }));
 }
 
-async function createAdminVehicle({ vehicleName }) {
+async function createAdminVehicle({ vehicleName, driverAccountId, passwordHash }) {
+  const client = await pool.connect();
   const randomSuffix = Math.random().toString(36).slice(2, 8);
   const vehicleId = `vehicle_admin_${Date.now()}_${randomSuffix}`;
-  const result = await pool.query(
-    `
-      insert into vehicles (
-        id,
-        name,
-        driver_user_id,
-        is_active,
-        created_at,
-        updated_at
-      ) values (
-        $1, $2, null, true, now(), now()
-      )
-      returning id, name, is_active
-    `,
-    [vehicleId, vehicleName],
-  );
+  const driverUserId = `driver_admin_${Date.now()}_${randomSuffix}`;
 
-  return findAdminVehicleById(result.rows[0].id);
+  try {
+    await client.query("begin");
+    await client.query(
+      `
+        insert into users (
+          id,
+          login_id,
+          password_hash,
+          role,
+          display_name,
+          is_active,
+          created_at,
+          updated_at
+        ) values ($1, $2, $3, 'driver', $4, true, now(), now())
+      `,
+      [driverUserId, driverAccountId, passwordHash, `${vehicleName} 기사님`],
+    );
+    await client.query(
+      `
+        insert into vehicles (
+          id,
+          name,
+          driver_user_id,
+          is_active,
+          created_at,
+          updated_at
+        ) values ($1, $2, $3, true, now(), now())
+      `,
+      [vehicleId, vehicleName, driverUserId],
+    );
+    await client.query("commit");
+    return findAdminVehicleById(vehicleId);
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
-async function updateAdminVehicle({ vehicleId, vehicleName, isActive }) {
-  const result = await pool.query(
-    `
-      update vehicles
-      set
-        name = $2,
-        is_active = $3,
-        updated_at = now()
-      where id = $1
-      returning id, name, is_active
-    `,
-    [vehicleId, vehicleName, isActive],
-  );
+async function updateAdminVehicle({
+  vehicleId,
+  vehicleName,
+  driverAccountId,
+  passwordHash,
+  isActive,
+}) {
+  const client = await pool.connect();
 
-  if (!result.rows[0]) {
-    return null;
+  try {
+    await client.query("begin");
+    const vehicleResult = await client.query(
+      `
+        select id, driver_user_id
+        from vehicles
+        where id = $1
+        for update
+      `,
+      [vehicleId],
+    );
+    const vehicle = vehicleResult.rows[0];
+
+    if (!vehicle) {
+      await client.query("rollback");
+      return null;
+    }
+
+    let driverUserId = vehicle.driver_user_id;
+
+    if (!driverUserId) {
+      const randomSuffix = Math.random().toString(36).slice(2, 8);
+      driverUserId = `driver_admin_${Date.now()}_${randomSuffix}`;
+      await client.query(
+        `
+          insert into users (
+            id,
+            login_id,
+            password_hash,
+            role,
+            display_name,
+            is_active,
+            created_at,
+            updated_at
+          ) values ($1, $2, $3, 'driver', $4, $5, now(), now())
+        `,
+        [driverUserId, driverAccountId, passwordHash, `${vehicleName} 기사님`, isActive],
+      );
+    } else {
+      await client.query(
+        `
+          update users
+          set
+            login_id = $2,
+            password_hash = coalesce($3, password_hash),
+            display_name = $4,
+            is_active = $5,
+            updated_at = now()
+          where id = $1
+            and role = 'driver'
+        `,
+        [driverUserId, driverAccountId, passwordHash, `${vehicleName} 기사님`, isActive],
+      );
+
+      if (passwordHash || !isActive) {
+        await client.query("delete from auth_sessions where user_id = $1", [driverUserId]);
+      }
+    }
+
+    await client.query(
+      `
+        update vehicles
+        set
+          name = $2,
+          driver_user_id = $3,
+          is_active = $4,
+          updated_at = now()
+        where id = $1
+      `,
+      [vehicleId, vehicleName, driverUserId, isActive],
+    );
+    await client.query("commit");
+    return findAdminVehicleById(vehicleId);
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
   }
-
-  return findAdminVehicleById(result.rows[0].id);
 }
 
 async function deactivateAdminVehicle(vehicleId) {
-  const result = await pool.query(
-    `
-      update vehicles
-      set
-        is_active = false,
-        updated_at = now()
-      where id = $1
-      returning id, name, is_active
-    `,
-    [vehicleId],
-  );
+  const client = await pool.connect();
 
-  if (!result.rows[0]) {
-    return null;
+  try {
+    await client.query("begin");
+    const result = await client.query(
+      `
+        update vehicles
+        set
+          is_active = false,
+          updated_at = now()
+        where id = $1
+        returning id, name, is_active, driver_user_id
+      `,
+      [vehicleId],
+    );
+
+    if (!result.rows[0]) {
+      await client.query("rollback");
+      return null;
+    }
+
+    if (result.rows[0].driver_user_id) {
+      await client.query(
+        "update users set is_active = false, updated_at = now() where id = $1",
+        [result.rows[0].driver_user_id],
+      );
+      await client.query(
+        "delete from auth_sessions where user_id = $1",
+        [result.rows[0].driver_user_id],
+      );
+    }
+
+    await client.query("commit");
+    return findAdminVehicleById(result.rows[0].id);
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
   }
-
-  return findAdminVehicleById(result.rows[0].id);
 }
 
 async function deleteAdminVehicle(vehicleId) {
@@ -549,7 +664,7 @@ async function deleteAdminVehicle(vehicleId) {
     await client.query("begin");
     const vehicleResult = await client.query(
       `
-        select id, name
+        select id, name, driver_user_id
         from vehicles
         where id = $1
         for update
@@ -583,11 +698,28 @@ async function deleteAdminVehicle(vehicleId) {
       [vehicleId],
     );
     await client.query("delete from vehicles where id = $1", [vehicleId]);
+    let driverAccountDeleted = false;
+
+    if (vehicle.driver_user_id) {
+      const driverResult = await client.query(
+        `
+          delete from users
+          where id = $1
+            and role = 'driver'
+            and not exists (
+              select 1 from vehicles where driver_user_id = $1
+            )
+        `,
+        [vehicle.driver_user_id],
+      );
+      driverAccountDeleted = driverResult.rowCount > 0;
+    }
     await client.query("commit");
 
     return {
       vehicleId: vehicle.id,
       vehicleName: vehicle.name,
+      driverAccountDeleted,
       deletedRelations: {
         schedules: scheduleResult.rowCount,
         attendanceRecords: attendanceResult.rowCount,

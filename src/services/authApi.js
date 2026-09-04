@@ -1,29 +1,18 @@
 import { ApiClientError, apiGet, apiPost } from "./apiClient.js";
-import {
-  clearDriverSession,
-  getStoredDriverSession,
-  writeDriverSession,
-} from "./driverSession.js";
 
 export async function getCurrentDriverSession() {
-  const session = getStoredDriverSession();
-
-  if (!session) {
-    return null;
-  }
-
   try {
     const data = await apiGet("/api/auth/me");
-    const nextSession = {
-      ...session,
+
+    if (data.user?.role !== "driver") {
+      return null;
+    }
+
+    return {
       user: data.user,
       isMockSession: data.isMockSession,
     };
-
-    writeDriverSession(nextSession);
-    return nextSession;
   } catch {
-    clearDriverSession();
     return null;
   }
 }
@@ -36,18 +25,12 @@ export async function loginDriver({ accountId, pin }) {
         accountId,
         pin,
       },
-      {
-        useAuth: false,
-      },
     );
     const session = {
-      token: data.token,
       user: data.user,
       isMockSession: data.isMockSession,
-      issuedAt: new Date().toISOString(),
+      expiresAt: data.expiresAt,
     };
-
-    writeDriverSession(session);
 
     return {
       success: true,
@@ -65,9 +48,5 @@ export async function loginDriver({ accountId, pin }) {
 }
 
 export async function logoutDriver() {
-  try {
-    await apiPost("/api/auth/logout", {});
-  } finally {
-    clearDriverSession();
-  }
+  await apiPost("/api/auth/logout", {});
 }

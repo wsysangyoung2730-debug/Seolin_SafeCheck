@@ -1,6 +1,4 @@
 import { getApiBaseUrl } from "../config/apiConfig.js";
-import { getStoredAdminSession } from "./adminSession.js";
-import { getStoredDriverSession } from "./driverSession.js";
 
 export class ApiClientError extends Error {
   constructor(message, { code = "API_ERROR", status = 0 } = {}) {
@@ -11,38 +9,21 @@ export class ApiClientError extends Error {
   }
 }
 
-function getSessionForRole(authRole) {
-  if (authRole === "admin") {
-    return getStoredAdminSession();
-  }
-
-  return getStoredDriverSession();
-}
-
-function buildHeaders({ useAuth = true, authRole = "driver" } = {}) {
-  const headers = {
+function buildHeaders() {
+  return {
     "Content-Type": "application/json",
   };
-
-  if (useAuth) {
-    const session = getSessionForRole(authRole);
-
-    if (session?.token) {
-      headers.Authorization = `Bearer ${session.token}`;
-    }
-  }
-
-  return headers;
 }
 
 async function request(
   path,
-  { method = "GET", body, useAuth = true, authRole = "driver" } = {},
+  { method = "GET", body } = {},
 ) {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method,
-    headers: buildHeaders({ useAuth, authRole }),
+    headers: buildHeaders(),
     body: body ? JSON.stringify(body) : undefined,
+    credentials: "include",
   });
 
   let payload;

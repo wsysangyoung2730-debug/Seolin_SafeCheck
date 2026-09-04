@@ -1,35 +1,18 @@
 import { ApiClientError, apiGet, apiPost } from "./apiClient.js";
-import {
-  clearAdminSession,
-  getStoredAdminSession,
-  writeAdminSession,
-} from "./adminSession.js";
 
 export async function getCurrentAdminSession() {
-  const session = getStoredAdminSession();
-
-  if (!session) {
-    return null;
-  }
-
   try {
-    const data = await apiGet("/api/auth/me", { authRole: "admin" });
+    const data = await apiGet("/api/auth/me");
 
     if (data.user?.role !== "admin") {
-      clearAdminSession();
       return null;
     }
 
-    const nextSession = {
-      ...session,
+    return {
       user: data.user,
       isMockSession: data.isMockSession,
     };
-
-    writeAdminSession(nextSession);
-    return nextSession;
   } catch {
-    clearAdminSession();
     return null;
   }
 }
@@ -42,19 +25,13 @@ export async function loginAdmin({ accountId, password }) {
         accountId,
         password,
       },
-      {
-        useAuth: false,
-      },
     );
 
     const session = {
-      token: data.token,
       user: data.user,
       isMockSession: data.isMockSession,
-      issuedAt: new Date().toISOString(),
+      expiresAt: data.expiresAt,
     };
-
-    writeAdminSession(session);
 
     return {
       success: true,
@@ -72,9 +49,5 @@ export async function loginAdmin({ accountId, password }) {
 }
 
 export async function logoutAdmin() {
-  try {
-    await apiPost("/api/auth/logout", {}, { authRole: "admin" });
-  } finally {
-    clearAdminSession();
-  }
+  await apiPost("/api/auth/logout", {});
 }

@@ -10,6 +10,12 @@ services:
       - seolin_safecheck_pgdata:/var/lib/postgresql/data
       - ./server/src/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   backend:
     build:
@@ -19,6 +25,8 @@ services:
       NODE_ENV: production
       PORT: 3000
       CORS_ORIGIN: ${CORS_ORIGIN}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
       DATABASE_URL: ${DATABASE_URL}
       SMS_PROVIDER: ${SMS_PROVIDER:-mock}
       SMS_REAL_SEND_ENABLED: ${SMS_REAL_SEND_ENABLED:-false}
@@ -28,8 +36,15 @@ services:
       SOLAPI_API_SECRET: ${SOLAPI_API_SECRET:-}
       SOLAPI_SENDER_NUMBER: ${SOLAPI_SENDER_NUMBER:-}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   frontend:
     build:
@@ -39,7 +54,8 @@ services:
     ports:
       - "${FRONTEND_PORT:-8080}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

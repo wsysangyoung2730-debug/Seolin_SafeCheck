@@ -6,7 +6,6 @@ import {
   apiPut,
 } from "./apiClient.js?v=permanent-delete-1";
 import { getApiBaseUrl } from "../config/apiConfig.js";
-import { getStoredAdminSession } from "./adminSession.js";
 
 const ADMIN_AUTH_OPTIONS = {
   authRole: "admin",
@@ -97,19 +96,27 @@ export async function getAdminVehicles() {
   return apiGet("/api/admin/vehicles", ADMIN_AUTH_OPTIONS);
 }
 
-export async function createAdminVehicle({ vehicleName }) {
+export async function createAdminVehicle({ vehicleName, driverAccountId, driverPin }) {
   return apiPost(
     "/api/admin/vehicles",
-    { vehicleName },
+    { vehicleName, driverAccountId, driverPin },
     ADMIN_AUTH_OPTIONS,
   );
 }
 
-export async function updateAdminVehicle({ vehicleId, vehicleName, isActive }) {
+export async function updateAdminVehicle({
+  vehicleId,
+  vehicleName,
+  driverAccountId,
+  driverPin,
+  isActive,
+}) {
   return apiPatch(
     `/api/admin/vehicles/${encodeURIComponent(vehicleId)}`,
     {
       vehicleName,
+      driverAccountId,
+      driverPin,
       isActive,
     },
     ADMIN_AUTH_OPTIONS,
@@ -257,13 +264,10 @@ export async function downloadAdminAttendanceRecords({ date, vehicleId, schedule
     query.set("scheduleId", scheduleId);
   }
 
-  const session = getStoredAdminSession();
   const response = await fetch(
     `${getApiBaseUrl()}/api/admin/attendance-records/export?${query.toString()}`,
     {
-      headers: session?.token
-        ? { Authorization: `Bearer ${session.token}` }
-        : {},
+      credentials: "include",
     },
   );
 
@@ -276,15 +280,11 @@ export async function downloadAdminAttendanceRecords({ date, vehicleId, schedule
 
 export async function previewExcelImport(file) {
   const formData = new FormData();
-  const session = getStoredAdminSession();
-
   formData.append("file", file);
 
   const response = await fetch(`${getApiBaseUrl()}/api/admin/excel/import/preview`, {
     method: "POST",
-    headers: session?.token
-      ? { Authorization: `Bearer ${session.token}` }
-      : {},
+    credentials: "include",
     body: formData,
   });
   const payload = await response.json();

@@ -6,19 +6,28 @@ drop table if exists route_schedule_students cascade;
 drop table if exists route_schedules cascade;
 drop table if exists students cascade;
 drop table if exists vehicles cascade;
+drop table if exists auth_sessions cascade;
 drop table if exists settings cascade;
 drop table if exists users cascade;
 
 create table users (
   id text primary key,
   login_id text not null unique,
-  password_hash text,
-  development_pin_hash text,
+  password_hash text not null,
   role text not null check (role in ('admin', 'driver')),
   display_name text not null,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table auth_sessions (
+  id text primary key,
+  token_hash text not null unique,
+  user_id text not null references users(id) on delete cascade,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now()
 );
 
 create table vehicles (
@@ -112,6 +121,8 @@ create table settings (
 );
 
 create index idx_vehicles_driver_user_id on vehicles(driver_user_id);
+create index idx_auth_sessions_user_id on auth_sessions(user_id);
+create index idx_auth_sessions_expires_at on auth_sessions(expires_at);
 create index idx_route_schedules_vehicle_day on route_schedules(vehicle_id, day_of_week);
 create index idx_route_schedule_students_schedule_id on route_schedule_students(route_schedule_id);
 create index idx_route_schedule_students_student_id on route_schedule_students(student_id);

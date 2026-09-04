@@ -2,11 +2,14 @@ require("dotenv").config();
 
 const createApp = require("./app");
 const { ensureDevelopmentScheduleSchema } = require("./db/developmentSchema");
+const { runMigrations } = require("./db/migrations");
 
 const app = createApp();
 const port = Number(process.env.PORT || 3000);
 
 async function startServer() {
+  await runMigrations();
+
   try {
     await ensureDevelopmentScheduleSchema();
   } catch (error) {

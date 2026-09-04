@@ -6,17 +6,16 @@ insert into users (
   id,
   login_id,
   password_hash,
-  development_pin_hash,
   role,
   display_name,
   is_active
 ) values
-  ('driver_car1', 'car1', null, '1234', 'driver', '1호차 기사님', true),
-  ('driver_car2', 'car2', null, '1234', 'driver', '2호차 기사님', true),
-  ('admin_1', 'admin', null, '1234', 'admin', '관리자', true)
+  ('driver_car1', 'car1', '$argon2id$v=19$m=19456,t=2,p=1$90QMdVrUpTr7eMpQ/UZdKA$Xk+UjslpW8iosr3L3f8r3SqMSMbCRgK6zAcQKRS+rRM', 'driver', '1호차 기사님', true),
+  ('driver_car2', 'car2', '$argon2id$v=19$m=19456,t=2,p=1$90QMdVrUpTr7eMpQ/UZdKA$Xk+UjslpW8iosr3L3f8r3SqMSMbCRgK6zAcQKRS+rRM', 'driver', '2호차 기사님', true),
+  ('admin_1', 'admin', '$argon2id$v=19$m=19456,t=2,p=1$90QMdVrUpTr7eMpQ/UZdKA$Xk+UjslpW8iosr3L3f8r3SqMSMbCRgK6zAcQKRS+rRM', 'admin', '관리자', true)
 on conflict (id) do update set
   login_id = excluded.login_id,
-  development_pin_hash = excluded.development_pin_hash,
+  password_hash = excluded.password_hash,
   role = excluded.role,
   display_name = excluded.display_name,
   is_active = excluded.is_active,

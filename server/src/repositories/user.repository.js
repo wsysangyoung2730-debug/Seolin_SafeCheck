@@ -68,7 +68,7 @@ async function findAdminByLoginId(loginId) {
       select
         id,
         login_id,
-        development_pin_hash,
+        password_hash,
         role,
         display_name
       from users
@@ -89,7 +89,7 @@ async function findDriverByLoginId(loginId) {
       select
         users.id,
         users.login_id,
-        users.development_pin_hash,
+        users.password_hash,
         users.role,
         users.display_name,
         vehicles.id as vehicle_id,

@@ -11,12 +11,26 @@ function createApp() {
   const app = express();
   const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5500";
 
+  if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+  }
+
+  app.disable("x-powered-by");
+  app.use((req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    res.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.set("X-Content-Type-Options", "nosniff");
+    res.set("X-Frame-Options", "DENY");
+    next();
+  });
+
   app.use(
     cors({
       origin: corsOrigin,
+      credentials: true,
     }),
   );
-  app.use(express.json());
+  app.use(express.json({ limit: "100kb" }));
 
   app.use("/api/health", healthRoutes);
   app.use("/api/auth", authRoutes);

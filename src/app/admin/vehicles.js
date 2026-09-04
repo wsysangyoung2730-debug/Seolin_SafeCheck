@@ -17,6 +17,10 @@ const form = document.querySelector("#vehicle-form");
 const dialogTitle = document.querySelector("#vehicle-dialog-title");
 const vehicleIdInput = document.querySelector("#vehicle-id");
 const vehicleNameInput = document.querySelector("#vehicle-name");
+const driverAccountIdInput = document.querySelector("#driver-account-id");
+const driverPinInput = document.querySelector("#driver-pin");
+const driverPinLabel = document.querySelector("#driver-pin-label");
+const driverPinHelp = document.querySelector("#driver-pin-help");
 const isActiveInput = document.querySelector("#vehicle-is-active");
 const cancelButton = document.querySelector("#cancel-vehicle-button");
 const saveButton = document.querySelector("#save-vehicle-button");
@@ -33,6 +37,7 @@ let vehicles = [];
 let pendingDeactivateVehicle = null;
 let pendingDeleteVehicle = null;
 let isSaving = false;
+let editingVehicleHasDriver = false;
 
 function setMessage(text, type = "info") {
   vehicleMessage.textContent = text;
@@ -107,10 +112,17 @@ function renderVehicles() {
 
 function openVehicleDialog(vehicle = null) {
   form.reset();
+  editingVehicleHasDriver = Boolean(vehicle?.driver);
   vehicleIdInput.value = vehicle?.vehicleId || "";
   vehicleNameInput.value = vehicle?.vehicleName || "";
+  driverAccountIdInput.value = vehicle?.driver?.accountId || "";
+  driverPinInput.value = "";
   isActiveInput.checked = vehicle ? vehicle.isActive : true;
   dialogTitle.textContent = vehicle ? "차량 정보 수정" : "차량 추가";
+  driverPinLabel.textContent = vehicle ? "새 기사 PIN" : "기사 PIN";
+  driverPinHelp.textContent = vehicle
+    ? "PIN을 바꿀 때만 입력하세요. 변경하면 기존 로그인 세션은 종료됩니다."
+    : "PIN 원문은 저장하거나 다시 표시하지 않습니다.";
   saveButton.textContent = vehicle ? "수정 저장" : "차량 추가";
   dialog.showModal();
   vehicleNameInput.focus();
@@ -124,6 +136,8 @@ function getFormValues() {
   return {
     vehicleId: vehicleIdInput.value,
     vehicleName: vehicleNameInput.value.trim(),
+    driverAccountId: driverAccountIdInput.value.trim().toLowerCase(),
+    driverPin: driverPinInput.value.trim(),
     isActive: isActiveInput.checked,
   };
 }
@@ -132,6 +146,24 @@ function validateForm(values) {
   if (!values.vehicleName) {
     setMessage("차량명을 입력해주세요.", "error");
     vehicleNameInput.focus();
+    return false;
+  }
+
+  if (!/^[a-z0-9][a-z0-9_-]{2,31}$/.test(values.driverAccountId)) {
+    setMessage("기사 로그인 ID를 영문 소문자, 숫자, -, _ 조합 3~32자로 입력해주세요.", "error");
+    driverAccountIdInput.focus();
+    return false;
+  }
+
+  if ((!values.vehicleId || !editingVehicleHasDriver) && !values.driverPin) {
+    setMessage("기사 계정을 만들려면 PIN을 입력해주세요.", "error");
+    driverPinInput.focus();
+    return false;
+  }
+
+  if (values.driverPin && !/^\d{6,12}$/.test(values.driverPin)) {
+    setMessage("기사 PIN을 숫자 6~12자리로 입력해주세요.", "error");
+    driverPinInput.focus();
     return false;
   }
 
@@ -237,7 +269,7 @@ async function confirmDeactivate() {
 function openDeleteDialog(vehicle) {
   pendingDeleteVehicle = vehicle;
   const driverWarning = vehicle.driver
-    ? " 배정된 기사님 계정은 차량 미배정 상태가 됩니다."
+    ? " 연결된 기사님 계정과 로그인 세션도 함께 삭제됩니다."
     : "";
   deleteMessage.textContent = `${vehicle.vehicleName} 차량을 영구 삭제할까요? 소속 시간표, 출결 기록, 연결된 문자 기록도 함께 삭제되며 복구할 수 없습니다.${driverWarning}`;
   deleteDialog.showModal();

@@ -41,7 +41,7 @@
             <div>
               <p class="eyebrow">차량 관리</p>
               <h1>차량 목록</h1>
-              <p>등원 차량 이름과 활성 상태를 관리합니다.</p>
+              <p>등원 차량과 기사님 로그인 정보를 함께 관리합니다.</p>
             </div>
             <button id="add-vehicle-button" class="primary-button" type="button">차량 추가</button>
           </div>
@@ -76,6 +76,33 @@
           <span>차량명</span>
           <input id="vehicle-name" name="vehicleName" type="text" autocomplete="off">
         </label>
+        <label class="field">
+          <span>기사 로그인 ID</span>
+          <input
+            id="driver-account-id"
+            name="driverAccountId"
+            type="text"
+            inputmode="latin"
+            autocomplete="off"
+            minlength="3"
+            maxlength="32"
+            placeholder="예: car1"
+          >
+        </label>
+        <label class="field">
+          <span id="driver-pin-label">기사 PIN</span>
+          <input
+            id="driver-pin"
+            name="driverPin"
+            type="password"
+            inputmode="numeric"
+            autocomplete="new-password"
+            minlength="6"
+            maxlength="12"
+            placeholder="숫자 6~12자리"
+          >
+        </label>
+        <p id="driver-pin-help" class="helper-note vehicle-pin-help"></p>
         <label class="checkbox-field">
           <input id="vehicle-is-active" name="isActive" type="checkbox" checked>
           <span>활성 차량</span>

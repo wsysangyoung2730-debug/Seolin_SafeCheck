@@ -225,6 +225,10 @@ a {
   font-size: 13px;
 }
 
+.vehicle-pin-help {
+  margin-top: -8px;
+}
+
 .destructive-note {
   border: 1px solid rgba(220, 38, 38, 0.2);
   border-radius: 8px;

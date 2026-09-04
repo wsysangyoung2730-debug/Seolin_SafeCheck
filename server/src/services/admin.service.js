@@ -30,6 +30,7 @@ const {
 } = require("./excel/excel.service");
 const { getAdminSmsLogs } = require("./sms/sms.service");
 const { normalizePhoneNumber } = require("./sms/phoneNumber");
+const { hashCredential } = require("./auth/password");
 
 const VALID_ATTENDANCE_STATUSES = new Set([
   "unchecked",
@@ -85,16 +86,42 @@ function validateStudentInput(student) {
   return "";
 }
 
-function normalizeVehicleInput({ vehicleName, isActive }) {
+function normalizeVehicleInput({
+  vehicleName,
+  driverAccountId,
+  driverPin,
+  isActive,
+}) {
   return {
     vehicleName: typeof vehicleName === "string" ? vehicleName.trim() : "",
+    driverAccountId:
+      typeof driverAccountId === "string"
+        ? driverAccountId.trim().toLowerCase()
+        : "",
+    driverPin: typeof driverPin === "string" ? driverPin.trim() : "",
     isActive: typeof isActive === "boolean" ? isActive : true,
   };
 }
 
-function validateVehicleInput(vehicle) {
+function validateVehicleInput(vehicle, { isCreate = false, hasDriver = false } = {}) {
   if (!vehicle.vehicleName) {
     return "차량명을 입력해주세요.";
+  }
+
+  if (!vehicle.driverAccountId) {
+    return "기사 로그인 ID를 입력해주세요.";
+  }
+
+  if (!/^[a-z0-9][a-z0-9_-]{2,31}$/.test(vehicle.driverAccountId)) {
+    return "기사 로그인 ID는 영문 소문자, 숫자, -, _ 조합 3~32자로 입력해주세요.";
+  }
+
+  if ((isCreate || !hasDriver) && !vehicle.driverPin) {
+    return "새 차량의 기사 PIN을 입력해주세요.";
+  }
+
+  if (vehicle.driverPin && !/^\d{6,12}$/.test(vehicle.driverPin)) {
+    return "기사 PIN은 숫자 6~12자리로 입력해주세요.";
   }
 
   return "";
@@ -234,7 +261,7 @@ async function getAdminVehicles() {
 
 async function createVehicle(input) {
   const vehicle = normalizeVehicleInput(input);
-  const validationMessage = validateVehicleInput(vehicle);
+  const validationMessage = validateVehicleInput(vehicle, { isCreate: true });
 
   if (validationMessage) {
     return {
@@ -243,12 +270,26 @@ async function createVehicle(input) {
     };
   }
 
-  return {
-    success: true,
-    data: {
-      vehicle: await createAdminVehicle(vehicle),
-    },
-  };
+  try {
+    const passwordHash = await hashCredential(vehicle.driverPin);
+
+    return {
+      success: true,
+      data: {
+        vehicle: await createAdminVehicle({ ...vehicle, passwordHash }),
+      },
+    };
+  } catch (error) {
+    if (error.code === "23505") {
+      return {
+        success: false,
+        code: "ACCOUNT_ID_DUPLICATE",
+        message: "이미 사용 중인 기사 로그인 ID입니다.",
+      };
+    }
+
+    throw error;
+  }
 }
 
 async function updateVehicle(vehicleId, input) {
@@ -259,8 +300,21 @@ async function updateVehicle(vehicleId, input) {
     };
   }
 
+  const currentVehicle = (await findAdminVehicles())
+    .find((item) => item.vehicleId === vehicleId);
+
+  if (!currentVehicle) {
+    return {
+      success: false,
+      code: "VEHICLE_NOT_FOUND",
+      message: "차량 정보를 찾을 수 없습니다.",
+    };
+  }
+
   const vehicle = normalizeVehicleInput(input);
-  const validationMessage = validateVehicleInput(vehicle);
+  const validationMessage = validateVehicleInput(vehicle, {
+    hasDriver: Boolean(currentVehicle.driver),
+  });
 
   if (validationMessage) {
     return {
@@ -269,10 +323,29 @@ async function updateVehicle(vehicleId, input) {
     };
   }
 
-  const updatedVehicle = await updateAdminVehicle({
-    vehicleId,
-    ...vehicle,
-  });
+  let updatedVehicle;
+
+  try {
+    const passwordHash = vehicle.driverPin
+      ? await hashCredential(vehicle.driverPin)
+      : null;
+
+    updatedVehicle = await updateAdminVehicle({
+      vehicleId,
+      ...vehicle,
+      passwordHash,
+    });
+  } catch (error) {
+    if (error.code === "23505") {
+      return {
+        success: false,
+        code: "ACCOUNT_ID_DUPLICATE",
+        message: "이미 사용 중인 기사 로그인 ID입니다.",
+      };
+    }
+
+    throw error;
+  }
 
   if (!updatedVehicle) {
     return {

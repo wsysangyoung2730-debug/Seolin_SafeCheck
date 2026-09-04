@@ -1,24 +1,59 @@
+const crypto = require("crypto");
+
 const {
-  findActiveUserById,
   findAdminByLoginId,
   findDriverByLoginId,
   toPublicAdminUser,
   toPublicDriverUser,
   toPublicUser,
 } = require("../repositories/user.repository");
+const {
+  createAuthSession,
+  deleteAuthSession,
+  deleteExpiredAuthSessions,
+  findUserBySessionToken,
+} = require("../repositories/auth.repository");
+const { verifyCredential } = require("./auth/password");
+const {
+  getSessionToken,
+  getSessionTtlMilliseconds,
+} = require("./auth/sessionCookie");
 
-const DEVELOPMENT_ADMIN_TOKEN = "mock-admin-token-admin";
-const DEVELOPMENT_ADMIN_ID = "admin_1";
-const DEVELOPMENT_DRIVER_TOKEN = "mock-driver-token-car1";
-const DEVELOPMENT_DRIVER_ID = "driver_car1";
-const ADMIN_TOKEN_PREFIX = "mock-admin-token-";
-const DRIVER_TOKEN_PREFIX = "mock-driver-token-";
+const PLACEHOLDER_PASSWORD_HASH = "$argon2id$v=19$m=19456,t=2,p=1$90QMdVrUpTr7eMpQ/UZdKA$Xk+UjslpW8iosr3L3f8r3SqMSMbCRgK6zAcQKRS+rRM";
+
+function normalizeLoginId(accountId) {
+  return typeof accountId === "string" ? accountId.trim().toLowerCase() : "";
+}
+
+async function createUserSession(user) {
+  const token = crypto.randomBytes(32).toString("base64url");
+  const expiresAt = new Date(Date.now() + getSessionTtlMilliseconds());
+
+  await deleteExpiredAuthSessions();
+  await createAuthSession({
+    userId: user.id,
+    token,
+    expiresAt,
+  });
+
+  return {
+    token,
+    expiresAt,
+  };
+}
 
 async function loginAdmin({ accountId, password, pin }) {
   const credential = password || pin;
-  const adminUser = accountId ? await findAdminByLoginId(accountId) : null;
+  const normalizedAccountId = normalizeLoginId(accountId);
+  const adminUser = normalizedAccountId
+    ? await findAdminByLoginId(normalizedAccountId)
+    : null;
+  const isValidCredential = await verifyCredential(
+    adminUser?.password_hash || PLACEHOLDER_PASSWORD_HASH,
+    credential,
+  );
 
-  if (!adminUser || adminUser.development_pin_hash !== credential) {
+  if (!adminUser || !isValidCredential) {
     return {
       success: false,
     };
@@ -26,16 +61,23 @@ async function loginAdmin({ accountId, password, pin }) {
 
   return {
     success: true,
-    token: createUserToken(adminUser),
+    session: await createUserSession(adminUser),
     user: toPublicAdminUser(adminUser),
   };
 }
 
 async function loginDriver({ accountId, password, pin }) {
   const credential = password || pin;
-  const driverUser = accountId ? await findDriverByLoginId(accountId) : null;
+  const normalizedAccountId = normalizeLoginId(accountId);
+  const driverUser = normalizedAccountId
+    ? await findDriverByLoginId(normalizedAccountId)
+    : null;
+  const isValidCredential = await verifyCredential(
+    driverUser?.password_hash || PLACEHOLDER_PASSWORD_HASH,
+    credential,
+  );
 
-  if (!driverUser || driverUser.development_pin_hash !== credential) {
+  if (!driverUser || !isValidCredential) {
     return {
       success: false,
     };
@@ -43,53 +85,17 @@ async function loginDriver({ accountId, password, pin }) {
 
   return {
     success: true,
-    token: createUserToken(driverUser),
+    session: await createUserSession(driverUser),
     user: toPublicDriverUser(driverUser),
   };
 }
 
-function createUserToken(user) {
-  if (user.role === "admin") {
-    return `${ADMIN_TOKEN_PREFIX}${user.id}`;
-  }
-
-  return `${DRIVER_TOKEN_PREFIX}${user.id}`;
-}
-
-function extractMockToken(req) {
-  const authHeader = req.get("authorization") || "";
-
-  if (authHeader.startsWith("Bearer ")) {
-    return authHeader.slice("Bearer ".length);
-  }
-
-  return req.get("x-mock-session-token") || "";
-}
-
 async function getCurrentUser(req) {
-  const token = extractMockToken(req);
+  return toPublicUser(await findUserBySessionToken(getSessionToken(req)));
+}
 
-  if (token === DEVELOPMENT_ADMIN_TOKEN) {
-    const adminUser = await findActiveUserById(DEVELOPMENT_ADMIN_ID);
-    return toPublicUser(adminUser);
-  }
-
-  if (token === DEVELOPMENT_DRIVER_TOKEN) {
-    const driverUser = await findActiveUserById(DEVELOPMENT_DRIVER_ID);
-    return toPublicUser(driverUser);
-  }
-
-  if (token.startsWith(ADMIN_TOKEN_PREFIX)) {
-    const adminUser = await findActiveUserById(token.slice(ADMIN_TOKEN_PREFIX.length));
-    return adminUser?.role === "admin" ? toPublicUser(adminUser) : null;
-  }
-
-  if (token.startsWith(DRIVER_TOKEN_PREFIX)) {
-    const driverUser = await findActiveUserById(token.slice(DRIVER_TOKEN_PREFIX.length));
-    return driverUser?.role === "driver" ? toPublicUser(driverUser) : null;
-  }
-
-  return null;
+async function logout(req) {
+  await deleteAuthSession(getSessionToken(req));
 }
 
 async function getCurrentDriver(req) {
@@ -118,4 +124,5 @@ module.exports = {
   getCurrentUser,
   loginAdmin,
   loginDriver,
+  logout,
 };
