@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>원생 관리 | Seolin SafeCheck</title>
-    <link rel="stylesheet" href="../../src/styles/admin.css?v=student-memo-1">
+    <link rel="stylesheet" href="../../src/styles/admin.css?v=phone-format-1">
   </head>
   <body>
     <div class="admin-shell">
@@ -109,7 +109,7 @@
         <fieldset class="form-section">
           <legend>보호자 연락처</legend>
           <p id="parent-contact-helper" class="form-section__helper">
-            기사님 화면의 전화·문자 버튼에 연결할 연락처입니다.
+            기사님 화면의 전화·문자 버튼에 연결됩니다. 010은 고정이며 뒤 8자리만 입력하세요.
           </p>
 
           <label class="field">
@@ -119,15 +119,20 @@
 
           <label class="field">
             <span>전화번호</span>
-            <input
-              id="parent-phone"
-              name="parentPhone"
-              type="tel"
-              inputmode="tel"
-              autocomplete="tel"
-              aria-describedby="parent-contact-helper"
-              placeholder="예: 010-1234-5678"
-            >
+            <span class="phone-input">
+              <span class="phone-input__prefix">010-</span>
+              <input
+                id="parent-phone"
+                name="parentPhoneSuffix"
+                type="tel"
+                inputmode="numeric"
+                autocomplete="tel-national"
+                maxlength="13"
+                pattern="[0-9]{4}-[0-9]{4}"
+                aria-describedby="parent-contact-helper"
+                placeholder="1234-5678"
+              >
+            </span>
           </label>
         </fieldset>
 
@@ -154,6 +159,6 @@
       </form>
     </dialog>
 
-    <script type="module" src="../../src/app/admin/students.js?v=student-memo-1"></script>
+    <script type="module" src="../../src/app/admin/students.js?v=phone-format-1"></script>
   </body>
 </html>

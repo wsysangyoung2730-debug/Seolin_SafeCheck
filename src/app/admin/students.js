@@ -3,7 +3,7 @@ import {
   deactivateAdminStudent,
   getAdminStudents,
   updateAdminStudent,
-} from "../../services/adminApi.js?v=student-memo-1";
+} from "../../services/adminApi.js?v=phone-format-1";
 import { ApiClientError } from "../../services/apiClient.js";
 import { bindPlannedNavigation, requireAdminSession } from "./layout.js";
 
@@ -76,6 +76,32 @@ function updateMemoCount() {
   }
 
   memoCount.textContent = `${Array.from(memoInput.value).length}/${STUDENT_MEMO_MAX_LENGTH}자`;
+}
+
+function getPhoneSuffixDigits(value) {
+  const digits = String(value || "").replace(/[^0-9]/g, "");
+
+  if (digits.length > 8 && !digits.startsWith("010")) {
+    return "";
+  }
+
+  const suffix = digits.length > 8 ? digits.slice(3) : digits;
+
+  return suffix.slice(0, 8);
+}
+
+function formatPhoneSuffix(value) {
+  const digits = getPhoneSuffixDigits(value);
+
+  if (digits.length <= 4) {
+    return digits;
+  }
+
+  return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+}
+
+function updateParentPhoneFormat() {
+  parentPhoneInput.value = formatPhoneSuffix(parentPhoneInput.value);
 }
 
 function renderStudents() {
@@ -177,7 +203,7 @@ function openStudentDialog(student = null, { focusContact = false } = {}) {
   pickupPlaceInput.value = student?.pickupPlace || "";
   memoInput.value = student?.memo || "";
   parentNameInput.value = student?.parentName || "";
-  parentPhoneInput.value = student?.parentPhone || "";
+  parentPhoneInput.value = formatPhoneSuffix(student?.parentPhone || "");
   isActiveInput.checked = student ? student.isActive : true;
   dialogTitle.textContent = student ? "원생 정보 수정" : "원생 추가";
   saveButton.textContent = student ? "수정 저장" : "원생 추가";
@@ -191,13 +217,15 @@ function closeStudentDialog() {
 }
 
 function getFormValues() {
+  const parentPhoneSuffix = getPhoneSuffixDigits(parentPhoneInput.value);
+
   return {
     studentId: studentIdInput.value,
     studentName: studentNameInput.value.trim(),
     pickupPlace: pickupPlaceInput.value.trim(),
     memo: memoInput.value.trim(),
     parentName: parentNameInput.value.trim(),
-    parentPhone: parentPhoneInput.value.trim(),
+    parentPhone: parentPhoneSuffix ? `010${parentPhoneSuffix}` : "",
     isActive: isActiveInput.checked,
   };
 }
@@ -215,10 +243,8 @@ function validateForm(values) {
     return false;
   }
 
-  const parentPhone = values.parentPhone.replace(/[^0-9]/g, "");
-
-  if (parentPhone && !/^0\d{8,10}$/.test(parentPhone)) {
-    setMessage("보호자 연락처를 올바르게 입력해주세요.", "error");
+  if (values.parentPhone && !/^010\d{8}$/.test(values.parentPhone)) {
+    setMessage("보호자 연락처를 010-0000-0000 형식으로 입력해주세요.", "error");
     parentPhoneInput.focus();
     return false;
   }
@@ -350,6 +376,7 @@ async function initializeStudents() {
   confirmDeactivateButton.addEventListener("click", confirmDeactivate);
   form.addEventListener("submit", handleSave);
   memoInput.addEventListener("input", updateMemoCount);
+  parentPhoneInput.addEventListener("input", updateParentPhoneFormat);
   searchInput.addEventListener("input", renderStudents);
 
   await loadStudents();
